@@ -1,0 +1,56 @@
+/* The About and Privacy pages. Colors copied from theme.css (static files can't read src/ tokens):
+   the page, text, muted text and primary, light and dark, and the same data-theme switch. */
+
+:root {
+  color-scheme: light dark;
+  --bg: light-dark(oklch(0.985 0.005 264), oklch(0.15 0.025 264));
+  --text: light-dark(oklch(0.22 0.03 264), oklch(0.96 0.015 264));
+  --text-muted: light-dark(oklch(0.47 0.05 264), oklch(0.76 0.05 264));
+  --primary: light-dark(oklch(0.5 0.15 264), oklch(0.76 0.1 264));
+  --danger: light-dark(oklch(0.52 0.17 25), oklch(0.72 0.13 25));
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+body {
+  margin: 0 auto;
+  max-width: 40rem;
+  padding: 2rem 1.25rem 4rem;
+  background: var(--bg);
+  color: var(--text);
+  font: 16px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+a {
+  color: var(--primary);
+}
+
+h1 {
+  font-size: 2rem;
+  line-height: 1.2;
+}
+
+h1 span {
+  color: var(--danger);
+}
+
+h2 {
+  font-size: 1.2rem;
+  margin-top: 2rem;
+}
+
+.muted,
+footer {
+  color: var(--text-muted);
+}
+
+footer {
+  margin-top: 3rem;
+  font-size: 0.9rem;
+}

@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="referrer" content="no-referrer" />
+    <title>rekt: a crypto trading game with play money and live prices</title>
+    <meta name="description" content="Start with $10,000 of play money, go long or short on live crypto prices with up to 100× leverage, and try not to get rekt. Free, no sign-up." />
+    <link rel="canonical" href="https://rekt.ferasbisharat.com/" />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="oklch(1 0 0)" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="oklch(0.2 0.025 264)" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="rekt" />
+    <meta property="og:title" content="rekt: trade crypto with play money. Get rekt for free." />
+    <meta property="og:description" content="$10,000 of play money, live crypto prices, up to 100× leverage. Free, in your browser, no sign-up." />
+    <meta property="og:url" content="https://rekt.ferasbisharat.com/" />
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="favicon.ico" sizes="32x32" />
+    <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+    <!-- What this is, for search engines (a data block: never run, so the CSP doesn't apply). -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "rekt",
+        "url": "https://rekt.ferasbisharat.com/",
+        "description": "A crypto trading game: play money, live prices, leveraged long and short positions, and quick Up or Down rounds.",
+        "applicationCategory": "GameApplication",
+        "operatingSystem": "Any (web browser)",
+        "isAccessibleForFree": true,
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+        "author": { "@type": "Person", "name": "Feras Bisharat", "url": "https://ferasbisharat.com" }
+      }
+    </script>
+  </head>
+  <body>
+    <!-- Shown while the app loads, and to anything that doesn't run JavaScript; the app replaces it. -->
+    <div id="root">
+      <div class="app">
+        <header class="topbar"><span class="logo">rekt<span>.</span></span></header>
+        <main class="desk" style="display: block">
+          <p>
+            A trading game with play money and live crypto prices. Start with $10,000, go long or short on Bitcoin, Ethereum, Dogecoin and more
+            with up to 100× leverage, or call the next minute in Up or Down. No sign-up, no real money.
+          </p>
+          <noscript><p>The game needs JavaScript to run.</p></noscript>
+        </main>
+      </div>
+    </div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

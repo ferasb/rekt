@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; base-uri 'none'; form-action 'none'" />
+    <meta name="referrer" content="no-referrer" />
+    <script src="theme-init.js"></script>
+    <title>About rekt</title>
+    <link rel="stylesheet" href="page.css" />
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="favicon.ico" sizes="32x32" />
+    <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+  </head>
+  <body>
+    <p><a href="./">← Back to the game</a></p>
+    <h1>About rekt<span>.</span></h1>
+    <p>
+      <strong>rekt</strong> is a trading game. You start with $10,000 of play money and trade real crypto prices, live from Coinbase. Nothing you do here
+      touches real money, and there's nothing to sign up for.
+    </p>
+
+    <h2>Trade</h2>
+    <p>
+      Open a <strong>long</strong> (you win if the price goes up) or a <strong>short</strong> (you win if it goes down). <strong>Leverage</strong> multiplies
+      the bet: at 10×, $1,000 of margin controls a $10,000 position, so a 1% move is a 10% win or loss on your margin.
+    </p>
+    <p>
+      If the price moves far enough against you, the position is <strong>liquidated</strong>: the exchange closes it and your margin is gone. At 10× that
+      takes about a 9.5% move; at 100×, half a percent. The liquidation price is shown before you open, on the chart, and on every position.
+    </p>
+    <p>
+      Like a real exchange, there's a 0.05% fee on the position's full size, when you open and when you close. At high leverage that adds up fast. Positions
+      stay open when you close the tab; when you come back, the game checks Coinbase's price history to see whether any got liquidated while you were gone.
+    </p>
+
+    <h2>Up or Down</h2>
+    <p>
+      Pick a coin, a stake and a clock (30 seconds, a minute or five), and call whether the price will be higher or lower when the time runs out. Right:
+      your stake comes back doubled. Wrong: it's gone. Exactly the same price: you get your stake back.
+    </p>
+
+    <h2>The fine print</h2>
+    <p>
+      This is a game, not financial advice, and not a simulation you should base real trades on. Real exchanges have order books, funding rates, slippage
+      and tiered margin, which the game leaves out. If you lose all your play money, you can get bailed out with a fresh $10,000, as many times as you like.
+      Your bailouts are counted, though.
+    </p>
+    <p>
+      Prices come from <a href="https://exchange.coinbase.com/">Coinbase Exchange</a>'s public market data. This site isn't affiliated with or endorsed by
+      Coinbase.
+    </p>
+
+    <h2>Credits</h2>
+    <p>
+      Charts by
+      <a href="https://www.tradingview.com/">TradingView</a>'s
+      <a href="https://github.com/tradingview/lightweight-charts">Lightweight Charts™</a> (Apache License 2.0). TradingView Lightweight Charts™, Copyright © 2026 TradingView, Inc.
+    </p>
+    <p>Display font: <a href="https://github.com/djrrb/Bungee">Bungee</a> by David Jonathan Ross (SIL Open Font License 1.1).</p>
+
+    <footer>
+      Made by <a href="https://ferasbisharat.com">Feras Bisharat</a> · <a href="privacy.html">Privacy</a>
+    </footer>
+  </body>
+</html>

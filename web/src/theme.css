@@ -1,0 +1,65 @@
+/*
+ * The palette of ferasbisharat.com and the sites under it.
+ *
+ * The same file lives in each repository: ferasb.github.io/theme.css is the original, and
+ * bloch-sphere/web/src/theme.css is a copy. Change the original, then copy it over.
+ *
+ * Every token has a light and a dark value, light-dark(light, dark), chosen by the page's color
+ * scheme: the system's by default, or the visitor's choice (data-theme="light" or "dark" on <html>).
+ * Colors are OKLCH; surfaces, text and lines share hue 264 (blue).
+ */
+
+:root {
+  color-scheme: light dark;
+
+  /* Surfaces, back to front: sunken (a 3D view, inputs), the page, raised (buttons, cards). */
+  --bg-sunken: light-dark(oklch(0.955 0.01 264), oklch(0.1 0.025 264));
+  --bg: light-dark(oklch(0.985 0.005 264), oklch(0.15 0.025 264));
+  --bg-raised: light-dark(oklch(1 0 0), oklch(0.2 0.025 264));
+
+  /* Text: at least 15:1 and 6:1 on every surface, in both themes. */
+  --text: light-dark(oklch(0.22 0.03 264), oklch(0.96 0.015 264));
+  --text-muted: light-dark(oklch(0.47 0.05 264), oklch(0.76 0.05 264));
+
+  /* Lines and interaction states. --highlight (hovered borders, input edges) keeps 3:1 against the page. */
+  --highlight: light-dark(oklch(0.6 0.05 264), oklch(0.5 0.05 264));
+  --border: light-dark(oklch(0.8 0.03 264), oklch(0.4 0.05 264));
+  --border-muted: light-dark(oklch(0.88 0.02 264), oklch(0.3 0.05 264));
+
+  /* Accents. --primary is for links, focus rings and the main action: at least 5.8:1 as text. */
+  --primary: light-dark(oklch(0.5 0.15 264), oklch(0.76 0.1 264));
+  --secondary: light-dark(oklch(0.53 0.1 84), oklch(0.76 0.1 84));
+
+  /* Status: always shown with an icon and a label, never color alone. */
+  --danger: light-dark(oklch(0.52 0.17 25), oklch(0.72 0.13 25));
+  --warning: light-dark(oklch(0.55 0.11 80), oklch(0.82 0.12 90));
+  --success: light-dark(oklch(0.5 0.12 155), oklch(0.74 0.13 155));
+  --info: light-dark(oklch(0.52 0.09 220), oklch(0.76 0.09 220));
+
+  /*
+   * Five colors for telling things apart (Bloch Sphere's qubits), in this fixed order: green, violet,
+   * amber, cyan, pink. Each theme's five are validated as a set, for every pair, by OKLab distance
+   * (x100) under protan/deutan simulation (Machado 2009) and for normal vision:
+   *   dark: worst pair 11.1 (deutan), 20.5 (normal); at least 4.7:1 on the dark page.
+   *   light: worst pair 11.1 (deutan), 20.8 (normal); at least 3:1 on the light page and --bg-sunken.
+   * The first two (seen together most) are at least 19.7 apart under simulation. Lightness varies
+   * across the set on purpose; it is the cue that survives color blindness. The hues stay the same
+   * in both themes, so the first color is green in either.
+   */
+  --accent-1: light-dark(oklch(0.4 0.11 150), oklch(0.6 0.15 150));
+  --accent-2: light-dark(oklch(0.4 0.17 295), oklch(0.6 0.15 295));
+  --accent-3: light-dark(oklch(0.6 0.125 75), oklch(0.82 0.15 75));
+  --accent-4: light-dark(oklch(0.62 0.11 215), oklch(0.82 0.141 215));
+  --accent-5: light-dark(oklch(0.52 0.17 355), oklch(0.74 0.15 355));
+
+  /* Drop shadows under popovers and menus. */
+  --shadow: light-dark(rgb(0 0 0 / 0.12), rgb(0 0 0 / 0.5));
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+}

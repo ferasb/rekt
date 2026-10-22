@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; base-uri 'none'; form-action 'none'" />
+    <meta name="referrer" content="no-referrer" />
+    <script src="theme-init.js"></script>
+    <title>Privacy · rekt</title>
+    <link rel="stylesheet" href="page.css" />
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="favicon.ico" sizes="32x32" />
+    <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+  </head>
+  <body>
+    <p><a href="./">← Back to the game</a></p>
+    <h1>Privacy</h1>
+    <p>The short version: there are no accounts, no cookies, no analytics and no ads, and your game never leaves your browser.</p>
+
+    <h2>What's stored, and where</h2>
+    <p>
+      Your game (your play money, positions, history and stats) and your settings (theme, sound, the coin you picked last) are kept in your browser's
+      <code>localStorage</code>, on your device only. They're never sent anywhere. Clearing this site's data in your browser, or
+      <strong>Reset everything</strong> in the game's menu, deletes them.
+    </p>
+
+    <h2>Who your browser talks to</h2>
+    <ul>
+      <li><strong>This site</strong> (hosted on GitHub Pages), to load the game. GitHub may log requests, as any web host does.</li>
+      <li>
+        <strong>Coinbase</strong> (<code>api.exchange.coinbase.com</code> and <code>ws-feed.exchange.coinbase.com</code>), for live prices and price history.
+        These are public market data feeds: your browser sends no information about you or your game, but Coinbase sees your IP address, as any server you
+        connect to does. See <a href="https://www.coinbase.com/legal/privacy">Coinbase's privacy policy</a>.
+      </li>
+    </ul>
+    <p>Nothing else: no third-party scripts, fonts or trackers. The site's Content Security Policy blocks everything except these two.</p>
+
+    <footer><a href="about.html">About</a> · Made by <a href="https://ferasbisharat.com">Feras Bisharat</a></footer>
+  </body>
+</html>
