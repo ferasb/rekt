@@ -15,22 +15,39 @@
   <body>
     <p><a href="./">← Back to the game</a></p>
     <h1>Privacy</h1>
-    <p>The short version: there are no accounts, no cookies, no analytics and no ads, and your game never leaves your browser.</p>
+    <p>
+      The short version: there are no accounts, no cookies from this site, no analytics and no ads. Your game is saved only in your own browser, and never
+      leaves it.
+    </p>
 
     <h2>What's stored, and where</h2>
     <p>
-      Your game (your play money, positions, history and stats) and your settings (theme, sound, the coin you picked last) are kept in your browser's
-      <code>localStorage</code>, on your device only. They're never sent anywhere. Clearing this site's data in your browser, or
-      <strong>Reset everything</strong> in the game's menu, deletes them.
+      The game keeps its state in your browser's <code>localStorage</code>, on your device only. It isn't sent to this site, to Coinbase or to anyone else, and
+      nobody (including me) can see it. That's:
+    </p>
+    <ul>
+      <li>your game: play money, open positions, the running round, history and stats;</li>
+      <li>the moment it last watched the prices, so it can check what happened to your positions while the page was closed;</li>
+      <li>your settings: the theme, sound on or off, and the coin you picked last.</li>
+    </ul>
+    <p>
+      Everyone's game is their own, in their own browser. Come back in the same browser and your game is still there; open the site on another device, in
+      another browser or in a private window, and you start fresh with $10,000. <strong>Reset everything</strong> in the game's menu, or clearing this site's
+      data in your browser, deletes it all.
+    </p>
+    <p>
+      This storage only makes the game work; it isn't used to identify or track you, so there's no cookie banner to click through.
     </p>
 
     <h2>Who your browser talks to</h2>
     <ul>
-      <li><strong>This site</strong> (hosted on GitHub Pages), to load the game. GitHub may log requests, as any web host does.</li>
+      <li><strong>This site</strong> (hosted on GitHub Pages), to load the game. Like any web host, GitHub may log requests, including your IP address.</li>
       <li>
         <strong>Coinbase</strong> (<code>api.exchange.coinbase.com</code> and <code>ws-feed.exchange.coinbase.com</code>), for live prices and price history.
-        These are public market data feeds: your browser sends no information about you or your game, but Coinbase sees your IP address, as any server you
-        connect to does. See <a href="https://www.coinbase.com/legal/privacy">Coinbase's privacy policy</a>.
+        These are public market data feeds: your browser sends nothing about you or your game, but Coinbase sees your IP address, as any server you connect
+        to does. Coinbase's servers sit behind Cloudflare, which tries to set a short-lived security cookie (<code>__cf_bm</code>, for telling people from
+        bots) on Coinbase's own domain. The game refuses it for price history; for the live price connection, browsers decide (Safari and Firefox block it by
+        default). This site can't read it. See <a href="https://www.coinbase.com/legal/privacy">Coinbase's privacy policy</a>.
       </li>
     </ul>
     <p>Nothing else: no third-party scripts, fonts or trackers. The site's Content Security Policy blocks everything except these two.</p>

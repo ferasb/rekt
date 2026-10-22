@@ -127,7 +127,12 @@ export async function fetchCandles(asset: string, granularity: Granularity, rang
     params.set("start", new Date(range.start).toISOString());
     params.set("end", new Date(range.end).toISOString());
   }
-  const response = await fetch(`${REST_URL}/products/${encodeURIComponent(asset)}/candles?${params}`, { signal, referrerPolicy: "no-referrer" });
+  // No cookies either way: Coinbase's Cloudflare front sets one (privacy.html), and this needs none.
+  const response = await fetch(`${REST_URL}/products/${encodeURIComponent(asset)}/candles?${params}`, {
+    signal,
+    credentials: "omit",
+    referrerPolicy: "no-referrer",
+  });
   if (!response.ok) throw new Error(`Coinbase answered ${response.status}`);
   return parseCandles(await response.json());
 }

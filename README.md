@@ -23,3 +23,7 @@ npm run build   # type-check and production build into web/dist
 The design is in [`docs/design.md`](docs/design.md); deploying in [`docs/deploying.md`](docs/deploying.md).
 
 Not financial advice. Not affiliated with Coinbase.
+
+## License
+
+[MIT](LICENSE)

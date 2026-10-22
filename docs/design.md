@@ -68,6 +68,7 @@ BTC, ETH, SOL, XRP, DOGE, ADA, AVAX, LINK, LTC, SUI, SHIB, PEPE, BONK, WIF, all 
 
 - **Live**: one WebSocket to `wss://ws-feed.exchange.coinbase.com`, the `ticker` channel for every coin. It sends each coin's latest price right after subscribing, then every trade. Reconnects with backoff; if nothing arrives for 20 s, it reconnects. The top bar shows the feed's state.
 - **History**: `GET https://api.exchange.coinbase.com/products/{id}/candles?granularity={s}`, public, CORS-enabled, no key. Candles come newest first as `[time, low, high, open, close, volume]`.
+- **No cookies.** Coinbase sits behind Cloudflare, which sets a bot-management cookie (`__cf_bm`). History requests are sent with `credentials: "omit"`, so it is neither sent nor stored; a WebSocket can't opt out, so the browser's third-party cookie rules decide (privacy page).
 - Ticks go into a small Zustand store (`ui/prices.ts`). The game reacts to them (liquidations) in the same place, so a liquidation never waits for React.
 
 ### 6.3 Stocks (later)

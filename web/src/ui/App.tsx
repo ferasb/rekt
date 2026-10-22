@@ -81,8 +81,10 @@ export function App() {
         <UpDown asset={asset} onPick={pick} />
       )}
       <footer className="footer">
-        Play money, real prices (from Coinbase). Not financial advice; not even good advice. ·{" "}
-        <a href="about.html">About</a> · <a href="privacy.html">Privacy</a> · by <a href="https://ferasbisharat.com">Feras Bisharat</a>
+        Play money, real prices (from Coinbase). Not financial advice; not even good advice.
+        <br />
+        Your game is saved only in this browser: no accounts, no tracking, no cookies from this site. · <a href="about.html">About</a> ·{" "}
+        <a href="privacy.html">Privacy</a> · by <a href="https://ferasbisharat.com">Feras Bisharat</a>
       </footer>
       {dialog === "stats" && <StatsDialog onClose={() => setDialog(null)} />}
       {dialog === "reset" && <ResetDialog onClose={() => setDialog(null)} />}
