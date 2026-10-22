@@ -73,7 +73,7 @@ export function Markets({ asset, onPick }: { asset: string; onPick(id: string): 
         <input
           id="market-search"
           type="search"
-          placeholder="🔍 Search 600+ markets"
+          placeholder="🔍 Search markets"
           autoComplete="off"
           spellCheck={false}
           value={query}
