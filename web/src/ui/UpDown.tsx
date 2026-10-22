@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { countdown, money, price as fmtPrice } from "../game/format";
 import { ROUND_DURATIONS, roundOutcome, roundProblem, type Call } from "../game/game";
-import { ASSETS, assetById } from "../market/assets";
+import { assetById } from "../market/assets";
+import { AssetSearch } from "./AssetSearch";
+import { MarketHours } from "./MarketHours";
 import { RoundChart } from "./charts/RoundChart";
 import { playRound, useGame } from "./engine";
 import { toast } from "./fx/bus";
@@ -10,6 +12,9 @@ import { usePrices } from "./prices";
 import { MoneyInput, Pnl } from "./widgets";
 
 const DURATION_LABELS: Record<number, string> = { 30_000: "30 s", 60_000: "1 min", 300_000: "5 min" };
+
+/** The quick picks above the search: the busiest coins and stocks, which move most in a minute. */
+const QUICK_PICKS = ["BTC-USD", "ETH-USD", "SOL-USD", "DOGE-USD", "PEPE-USD", "TSLAx/USD", "NVDAx/USD", "AAPLx/USD", "SPYx/USD"];
 
 function useNow(active: boolean): number {
   const [now, setNow] = useState(Date.now());
@@ -29,7 +34,7 @@ function Running() {
   const left = round.endsAt - now;
   const total = round.endsAt - round.startedAt;
   const outcome = price ? roundOutcome(round.call, round.startPrice, price) : "push";
-  const symbol = assetById(round.asset)?.symbol ?? round.asset;
+  const symbol = assetById(round.asset).symbol;
 
   // A tick each second in the last five.
   const second = Math.ceil(left / 1000);
@@ -72,7 +77,7 @@ export function UpDown({ asset, onPick }: { asset: string; onPick(id: string): v
   const stake = Number(stakeText) || 0;
   const problem = roundProblem(game, stake, price);
   const last = game.rounds[0];
-  const symbol = assetById(asset)?.symbol ?? asset;
+  const symbol = assetById(asset).symbol;
 
   const go = (call: Call, amount = stake) => {
     try {
@@ -103,6 +108,7 @@ export function UpDown({ asset, onPick }: { asset: string; onPick(id: string): v
           <div>
             <h2>Up or Down?</h2>
             <p className="muted">Call where {symbol} will be when the clock runs out. Right: double your stake. Wrong: it's gone.</p>
+            {assetById(game.round?.asset ?? asset).kind === "stock" && <MarketHours closedNote="Expect a lot of pushes" />}
           </div>
           {s.streak > 0 && (
             <div className="streak" title="Rounds won in a row">
@@ -110,12 +116,15 @@ export function UpDown({ asset, onPick }: { asset: string; onPick(id: string): v
             </div>
           )}
         </div>
-        <div className="coin-picker" role="radiogroup" aria-label="Coin">
-          {ASSETS.map((a) => (
-            <button key={a.id} type="button" role="radio" aria-checked={a.id === asset} className="chip" disabled={game.round !== null} onClick={() => onPick(a.id)}>
-              {a.symbol}
-            </button>
-          ))}
+        <div className="coin-picker">
+          <div className="presets" role="radiogroup" aria-label="Coin or stock">
+            {[...(QUICK_PICKS.includes(asset) ? [] : [asset]), ...QUICK_PICKS].map((id) => (
+              <button key={id} type="button" role="radio" aria-checked={id === asset} className="chip" disabled={game.round !== null} onClick={() => onPick(id)}>
+                {assetById(id).symbol}
+              </button>
+            ))}
+          </div>
+          <AssetSearch onPick={onPick} disabled={game.round !== null} />
         </div>
         <RoundChart asset={game.round?.asset ?? asset} round={game.round} />
         {game.round ? (
@@ -175,7 +184,7 @@ export function UpDown({ asset, onPick }: { asset: string; onPick(id: string): v
           {game.rounds.slice(0, 15).map((r) => (
             <li key={r.id} className="history-row">
               <span>
-                {r.outcome === "win" ? "✅" : r.outcome === "loss" ? "❌" : "➖"} {assetById(r.asset)?.symbol} <span className={r.call}>{r.call === "up" ? "▲ UP" : "▼ DOWN"}</span>
+                {r.outcome === "win" ? "✅" : r.outcome === "loss" ? "❌" : "➖"} {assetById(r.asset).symbol} <span className={r.call}>{r.call === "up" ? "▲ UP" : "▼ DOWN"}</span>
               </span>
               <span className="muted">
                 {fmtPrice(r.startPrice)} → {r.endPrice ? fmtPrice(r.endPrice) : "void"}

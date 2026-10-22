@@ -25,7 +25,7 @@ describe("saved games", () => {
     expect(parseGame({ ...game, version: 2 })).toBeNull();
     expect(parseGame({ ...game, cash: -1 })).toBeNull();
     expect(parseGame({ ...game, cash: "lots" })).toBeNull();
-    expect(parseGame({ ...game, positions: [{ ...game.positions[0], asset: "SCAM-USD" }] })).toBeNull();
+    expect(parseGame({ ...game, positions: [{ ...game.positions[0], asset: "BTC-EUR" }] })).toBeNull();
     expect(parseGame({ ...game, positions: [{ ...game.positions[0], leverage: 1000 }] })).toBeNull();
     expect(parseGame({ ...game, stats: { ...game.stats, wins: null } })).toBeNull();
     expect(parseGame({ ...game, round: { nope: 1 } })).toBeNull();

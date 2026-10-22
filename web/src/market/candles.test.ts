@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { applyTrade, granularityFor, parseCandles, type Candle } from "./candles";
+import { KRAKEN_GRANULARITIES, KRAKEN_MAX_CANDLES, applyTrade, granularityFor, parseCandles, parseKrakenCandles, type Candle } from "./candles";
 
 describe("Coinbase candles", () => {
   it("parses rows newest first into candles oldest first", () => {
@@ -58,5 +58,27 @@ describe("candle size for a gap", () => {
     expect(granularityFor(10 * 86_400_000)).toBe(3600);
     expect(granularityFor(60 * 86_400_000)).toBe(21600);
     expect(granularityFor(1000 * 86_400_000)).toBe(86400);
+  });
+});
+
+describe("Kraken candles", () => {
+  it("parse string prices, oldest first", () => {
+    const rows = [
+      [120, "10", "12", "9", "11", "10.5", "3", 4],
+      [60, "9", "11", "8", "10", "9.5", "2", 3],
+      [180, "x", "1", "1", "1", "1", "1", 1],
+    ];
+    expect(parseKrakenCandles(rows)).toEqual([
+      { time: 60, open: 9, high: 11, low: 8, close: 10 },
+      { time: 120, open: 10, high: 12, low: 9, close: 11 },
+    ]);
+    expect(parseKrakenCandles("nope")).toEqual([]);
+  });
+
+  it("size a gap by Kraken's 720-candle limit", () => {
+    expect(granularityFor(12 * 3_600_000, KRAKEN_GRANULARITIES, KRAKEN_MAX_CANDLES)).toBe(60);
+    expect(granularityFor(12 * 3_600_000 + 1, KRAKEN_GRANULARITIES, KRAKEN_MAX_CANDLES)).toBe(300);
+    expect(granularityFor(20 * 86_400_000, KRAKEN_GRANULARITIES, KRAKEN_MAX_CANDLES)).toBe(3600);
+    expect(granularityFor(10_000 * 86_400_000, KRAKEN_GRANULARITIES, KRAKEN_MAX_CANDLES)).toBe(86400);
   });
 });

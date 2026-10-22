@@ -1,5 +1,6 @@
 import { create } from "zustand";
-import type { FeedStatus, Tick } from "../market/coinbase";
+import type { Source } from "../market/assets";
+import type { FeedStatus, Tick } from "../market/feeds";
 
 /**
  * Live prices, for drawing (design.md §6.2). Ticks arrive many times a second; the game reads them
@@ -8,10 +9,10 @@ import type { FeedStatus, Tick } from "../market/coinbase";
 interface PriceState {
   prices: Readonly<Record<string, number>>;
   open24h: Readonly<Record<string, number>>;
-  status: FeedStatus;
+  status: Readonly<Record<Source, FeedStatus>>;
 }
 
-export const usePrices = create<PriceState>(() => ({ prices: {}, open24h: {}, status: "connecting" }));
+export const usePrices = create<PriceState>(() => ({ prices: {}, open24h: {}, status: { coinbase: "connecting", kraken: "idle" } }));
 
 /** The newest price of every asset, updated on every tick. */
 export const latest: Record<string, number> = {};
@@ -60,6 +61,6 @@ export function receiveTick(tick: Tick): void {
   flushTimer ??= setTimeout(flush, 100);
 }
 
-export function setFeedStatus(status: FeedStatus): void {
-  usePrices.setState({ status });
+export function setFeedStatus(source: Source, status: FeedStatus): void {
+  usePrices.setState((s) => ({ status: { ...s.status, [source]: status } }));
 }

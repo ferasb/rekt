@@ -1,9 +1,10 @@
-import { useState } from "react";
-import { GRANULARITIES, type Granularity } from "../market/candles";
-import { assetById } from "../market/assets";
+import { useEffect, useState } from "react";
+import { assetById, blurbOf } from "../market/assets";
 import { CandleChart } from "./charts/CandleChart";
 import { Bailout, ResetDialog, StatsDialog } from "./Dialogs";
+import { watchAssets } from "./engine";
 import { Effects } from "./fx/Effects";
+import { MarketHours } from "./MarketHours";
 import { Markets } from "./Markets";
 import { OrderTicket } from "./OrderTicket";
 import { Positions } from "./Positions";
@@ -14,14 +15,15 @@ import { usePrices } from "./prices";
 import { Pnl } from "./widgets";
 import { price as fmtPrice } from "../game/format";
 
-const CHART_SIZES: { g: Granularity; label: string }[] = [
-  { g: GRANULARITIES[0], label: "1m" },
-  { g: GRANULARITIES[1], label: "5m" },
-  { g: GRANULARITIES[3], label: "1h" },
+/** Candle sizes both exchanges serve, in seconds. */
+const CHART_SIZES = [
+  { g: 60, label: "1m" },
+  { g: 300, label: "5m" },
+  { g: 3600, label: "1h" },
 ];
 
-function ChartHeader({ asset, granularity, onGranularity }: { asset: string; granularity: Granularity; onGranularity(g: Granularity): void }) {
-  const a = assetById(asset)!;
+function ChartHeader({ asset, granularity, onGranularity }: { asset: string; granularity: number; onGranularity(g: number): void }) {
+  const a = assetById(asset);
   const price = usePrices((s) => s.prices[asset]);
   const open = usePrices((s) => s.open24h[asset]);
   return (
@@ -30,7 +32,8 @@ function ChartHeader({ asset, granularity, onGranularity }: { asset: string; gra
         <h2>
           {a.name} <span className="muted">{a.symbol}/USD</span>
         </h2>
-        <p className="muted blurb">{a.blurb}</p>
+        <p className="muted blurb">{blurbOf(a)}</p>
+        {a.kind === "stock" && <MarketHours />}
       </div>
       <div className="chart-price">
         <strong className="num">{price ? fmtPrice(price) : "…"}</strong>
@@ -52,14 +55,16 @@ function ChartHeader({ asset, granularity, onGranularity }: { asset: string; gra
 }
 
 export function App() {
-  const { room } = useRoom();
+  const room = useRoom();
   const [asset, setAsset] = useState(loadAsset);
-  const [granularity, setGranularity] = useState<Granularity>(60);
+  const [granularity, setGranularity] = useState(60);
   const [dialog, setDialog] = useState<"stats" | "reset" | null>(null);
   const pick = (id: string) => {
     setAsset(id);
     saveAsset(id);
   };
+  // The picked one always has live prices, featured or not.
+  useEffect(() => watchAssets("selected", [asset]), [asset]);
 
   return (
     <div className="app">
@@ -81,7 +86,7 @@ export function App() {
         <UpDown asset={asset} onPick={pick} />
       )}
       <footer className="footer">
-        Play money, real prices (from Coinbase). Not financial advice; not even good advice.
+        Play money, real prices (crypto from Coinbase, stocks from Kraken). Not financial advice; not even good advice.
         <br />
         Your game is saved only in this browser: no accounts, no tracking, no cookies from this site. · <a href="about.html">About</a> ·{" "}
         <a href="privacy.html">Privacy</a> · by <a href="https://ferasbisharat.com">Feras Bisharat</a>

@@ -1,4 +1,4 @@
-import { isAsset } from "../market/assets";
+import { isAssetId, type Source } from "../market/assets";
 import type { Call, Game, Round, RoundResult, Stats, Trade } from "../game/game";
 import { MAX_LEVERAGE, type Position, type Side } from "../game/money";
 
@@ -16,7 +16,7 @@ const obj = (v: unknown): v is Record<string, unknown> => typeof v === "object" 
 function position(v: unknown): Position | null {
   if (!obj(v)) return null;
   const { id, asset, side: s, margin, leverage, entryPrice, size, openFee, openedAt } = v;
-  if (!str(id) || !isAsset(asset) || !side(s) || !pos(margin) || !pos(entryPrice) || !pos(size) || !nonNeg(openFee) || !num(openedAt)) return null;
+  if (!str(id) || !isAssetId(asset) || !side(s) || !pos(margin) || !pos(entryPrice) || !pos(size) || !nonNeg(openFee) || !num(openedAt)) return null;
   if (!num(leverage) || leverage < 1 || leverage > MAX_LEVERAGE) return null;
   return { id, asset, side: s, margin, leverage, entryPrice, size, openFee, openedAt };
 }
@@ -24,7 +24,7 @@ function position(v: unknown): Position | null {
 function trade(v: unknown): Trade | null {
   if (!obj(v)) return null;
   const { id, asset, side: s, leverage, margin, entryPrice, exitPrice, openedAt, closedAt, result, how, away } = v;
-  if (!str(id) || !isAsset(asset) || !side(s) || !pos(leverage) || !pos(margin) || !pos(entryPrice) || !nonNeg(exitPrice)) return null;
+  if (!str(id) || !isAssetId(asset) || !side(s) || !pos(leverage) || !pos(margin) || !pos(entryPrice) || !nonNeg(exitPrice)) return null;
   if (!num(openedAt) || !num(closedAt) || !num(result) || (how !== "closed" && how !== "liquidated")) return null;
   return { id, asset, side: s, leverage, margin, entryPrice, exitPrice, openedAt, closedAt, result, how, ...(away === true ? { away } : {}) };
 }
@@ -32,14 +32,14 @@ function trade(v: unknown): Trade | null {
 function round(v: unknown): Round | null {
   if (!obj(v)) return null;
   const { id, asset, call: c, stake, startPrice, startedAt, endsAt } = v;
-  if (!str(id) || !isAsset(asset) || !call(c) || !pos(stake) || !pos(startPrice) || !num(startedAt) || !num(endsAt)) return null;
+  if (!str(id) || !isAssetId(asset) || !call(c) || !pos(stake) || !pos(startPrice) || !num(startedAt) || !num(endsAt)) return null;
   return { id, asset, call: c, stake, startPrice, startedAt, endsAt };
 }
 
 function roundResult(v: unknown): RoundResult | null {
   if (!obj(v)) return null;
   const { id, asset, call: c, stake, startPrice, endPrice, outcome, payout, endedAt } = v;
-  if (!str(id) || !isAsset(asset) || !call(c) || !pos(stake) || !pos(startPrice) || !nonNeg(payout) || !num(endedAt)) return null;
+  if (!str(id) || !isAssetId(asset) || !call(c) || !pos(stake) || !pos(startPrice) || !nonNeg(payout) || !num(endedAt)) return null;
   if (!(endPrice === null || pos(endPrice))) return null;
   if (outcome !== "win" && outcome !== "loss" && outcome !== "push" && outcome !== "void") return null;
   return { id, asset, call: c, stake, startPrice, endPrice, outcome, payout, endedAt };
@@ -112,23 +112,23 @@ export function saveGame(game: Game): void {
   }
 }
 
-// When the live feed last watched every price (design.md §5), in its own key: it's written every few
-// seconds, and rewriting the whole game that often could undo another tab's trade.
-const COVERED_KEY = "rekt:covered";
+// When each exchange's live feed last watched every price (design.md §5), in their own keys: they're
+// written every few seconds, and rewriting the whole game that often could undo another tab's trade.
+const COVERED_KEYS: Record<Source, string> = { coinbase: "rekt:covered", kraken: "rekt:covered:kraken" };
 
-/** Unix ms up to which the live feed watched every price, or null. */
-export function loadCovered(): number | null {
+/** Unix ms up to which this exchange's feed watched every price, or null. */
+export function loadCovered(source: Source): number | null {
   try {
-    const value = Number(localStorage.getItem(COVERED_KEY));
+    const value = Number(localStorage.getItem(COVERED_KEYS[source]));
     return value > 0 ? value : null;
   } catch {
     return null;
   }
 }
 
-export function saveCovered(time: number): void {
+export function saveCovered(source: Source, time: number): void {
   try {
-    localStorage.setItem(COVERED_KEY, String(time));
+    localStorage.setItem(COVERED_KEYS[source], String(time));
   } catch {
     // Storage blocked: a reopened page can't check what happened while it was closed.
   }

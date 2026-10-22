@@ -17,7 +17,7 @@ export function OrderTicket({ asset }: { asset: string }) {
   const [step, setStep] = useState(4); // 10×
   const leverage = LEVERAGE_STEPS[step].leverage;
   const margin = Number(marginText) || 0;
-  const symbol = assetById(asset)?.symbol ?? asset;
+  const symbol = assetById(asset).symbol;
 
   const order = { asset, side, margin, leverage, price: price ?? NaN };
   const problem = orderProblem(order, cash);

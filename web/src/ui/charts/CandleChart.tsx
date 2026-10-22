@@ -1,8 +1,8 @@
 import { CandlestickSeries, LineStyle, type IChartApi, type IPriceLine, type ISeriesApi, type UTCTimestamp } from "lightweight-charts";
 import { useEffect, useRef, useState } from "react";
 import { liquidationPrice } from "../../game/money";
-import { applyTrade, type Candle, type Granularity } from "../../market/candles";
-import { fetchCandles } from "../../market/coinbase";
+import { applyTrade, type Candle } from "../../market/candles";
+import { fetchCandles } from "../../market/feeds";
 import { useGame } from "../engine";
 import { onTick } from "../prices";
 import { cssColor, useTheme } from "../theme";
@@ -16,8 +16,8 @@ function seriesColors() {
   return { upColor: up, downColor: down, borderUpColor: up, borderDownColor: down, wickUpColor: up, wickDownColor: down };
 }
 
-/** The Trade room's chart (design.md §2.1): candles from Coinbase, extended live, with your positions' lines. */
-export function CandleChart({ asset, granularity }: { asset: string; granularity: Granularity }) {
+/** The Trade room's chart (design.md §2.1): candles from the exchange, extended live, with your positions' lines. */
+export function CandleChart({ asset, granularity }: { asset: string; granularity: number }) {
   const container = useRef<HTMLDivElement>(null);
   const chart = useRef<IChartApi | null>(null);
   const series = useRef<ISeriesApi<"Candlestick"> | null>(null);
@@ -91,7 +91,7 @@ export function CandleChart({ asset, granularity }: { asset: string; granularity
       {state === "loading" && <p className="chart-note">Loading the chart…</p>}
       {state === "failed" && (
         <p className="chart-note">
-          Couldn't load the chart from Coinbase.{" "}
+          Couldn't load the chart.{" "}
           <button type="button" className="link" onClick={() => setRetry((n) => n + 1)}>
             Try again
           </button>

@@ -4,8 +4,8 @@ import { defineConfig } from "vitest/config";
 
 /**
  * The Content Security Policy, as a <meta> tag because GitHub Pages can't send headers. Everything
- * comes from this site, except the prices: Coinbase's public market data, over HTTPS and a WebSocket
- * (design.md §6.2). No third-party scripts, fonts or analytics. Inline styles are allowed for React's
+ * comes from this site, except the prices: Coinbase's and Kraken's public market data, over HTTPS
+ * and WebSockets (design.md §6.2). No third-party scripts, fonts or analytics. Inline styles are allowed for React's
  * style props (the danger bars, confetti). (frame-ancestors only works as a header, so it's absent.)
  * Added at build time only: the dev server needs inline scripts for hot reload.
  */
@@ -15,7 +15,7 @@ const CSP = [
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data:",
   "font-src 'self' data:",
-  "connect-src 'self' https://api.exchange.coinbase.com wss://ws-feed.exchange.coinbase.com",
+  "connect-src 'self' https://api.exchange.coinbase.com wss://ws-feed.exchange.coinbase.com https://api.kraken.com wss://ws.kraken.com",
   "object-src 'none'",
   "base-uri 'none'",
   "form-action 'none'",

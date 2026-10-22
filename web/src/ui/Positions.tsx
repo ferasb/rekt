@@ -8,7 +8,7 @@ import { toast } from "./fx/bus";
 import { usePrices } from "./prices";
 import { Pnl, useFlash } from "./widgets";
 
-const symbol = (asset: string) => assetById(asset)?.symbol ?? asset;
+const symbol = (asset: string) => assetById(asset).symbol;
 
 function PositionRow({ p, onPick }: { p: Position; onPick(asset: string): void }) {
   const price = usePrices((s) => s.prices[p.asset]);

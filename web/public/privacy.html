@@ -28,7 +28,8 @@
     <ul>
       <li>your game: play money, open positions, the running round, history and stats;</li>
       <li>the moment it last watched the prices, so it can check what happened to your positions while the page was closed;</li>
-      <li>your settings: the theme, sound on or off, and the coin you picked last.</li>
+      <li>your settings: the theme, sound on or off, and the coin or stock you picked last;</li>
+      <li>the exchanges' lists of coins and stocks, for search, kept for a day so they don't download every time.</li>
     </ul>
     <p>
       Everyone's game is their own, in their own browser. Come back in the same browser and your game is still there; open the site on another device, in
@@ -43,14 +44,19 @@
     <ul>
       <li><strong>This site</strong> (hosted on GitHub Pages), to load the game. Like any web host, GitHub may log requests, including your IP address.</li>
       <li>
-        <strong>Coinbase</strong> (<code>api.exchange.coinbase.com</code> and <code>ws-feed.exchange.coinbase.com</code>), for live prices and price history.
-        These are public market data feeds: your browser sends nothing about you or your game, but Coinbase sees your IP address, as any server you connect
-        to does. Coinbase's servers sit behind Cloudflare, which tries to set a short-lived security cookie (<code>__cf_bm</code>, for telling people from
-        bots) on Coinbase's own domain. The game refuses it for price history; for the live price connection, browsers decide (Safari and Firefox block it by
-        default). This site can't read it. See <a href="https://www.coinbase.com/legal/privacy">Coinbase's privacy policy</a>.
+        <strong>Coinbase</strong> (<code>api.exchange.coinbase.com</code> and <code>ws-feed.exchange.coinbase.com</code>), for crypto prices, and
+        <strong>Kraken</strong> (<code>api.kraken.com</code> and <code>ws.kraken.com</code>), for stock prices. These are public market data feeds: your
+        browser sends nothing about you or your game, only which coins and stocks to send prices for, but the exchanges see your IP address, as any server
+        you connect to does.
+      </li>
+      <li>
+        Both exchanges sit behind Cloudflare, which tries to set short-lived security cookies (<code>__cf_bm</code>, <code>_cfuvid</code>, for telling people
+        from bots) on the exchanges' own domains; Kraken also tries to set a language cookie. The game refuses them for price history and lists; for the live
+        price connections, browsers decide (Safari and Firefox block them by default). This site can't read them. See
+        <a href="https://www.coinbase.com/legal/privacy">Coinbase's</a> and <a href="https://www.kraken.com/legal/privacy">Kraken's</a> privacy policies.
       </li>
     </ul>
-    <p>Nothing else: no third-party scripts, fonts or trackers. The site's Content Security Policy blocks everything except these two.</p>
+    <p>Nothing else: no third-party scripts, fonts or trackers. The site's Content Security Policy blocks everything except these.</p>
 
     <footer><a href="about.html">About</a> · Made by <a href="https://ferasbisharat.com">Feras Bisharat</a></footer>
   </body>

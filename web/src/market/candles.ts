@@ -11,10 +11,13 @@ export interface Candle {
 
 /** Candle sizes Coinbase serves, in seconds. */
 export const GRANULARITIES = [60, 300, 900, 3600, 21600, 86400] as const;
-export type Granularity = (typeof GRANULARITIES)[number];
-
 /** The most candles Coinbase returns per request. */
 export const MAX_CANDLES = 300;
+
+/** Candle sizes Kraken serves (it counts in minutes), in seconds. */
+export const KRAKEN_GRANULARITIES = [60, 300, 900, 1800, 3600, 14400, 86400] as const;
+/** Kraken returns only the latest 720 candles, whatever the start. */
+export const KRAKEN_MAX_CANDLES = 720;
 
 /**
  * Coinbase's rows, [time, low, high, open, close, volume] newest first, as candles oldest first.
@@ -50,10 +53,29 @@ export function applyTrade(candles: Candle[], price: number, timeSec: number, gr
   return fresh;
 }
 
-/** The smallest candle size that covers this many milliseconds in one request. */
-export function granularityFor(spanMs: number): Granularity {
-  for (const g of GRANULARITIES) {
-    if (spanMs / 1000 / g <= MAX_CANDLES) return g;
+/**
+ * The smallest candle size that covers this many milliseconds in one request, given the sizes an
+ * exchange serves and how many candles it returns. Past the largest, the largest.
+ */
+export function granularityFor(spanMs: number, sizes: readonly number[] = GRANULARITIES, max = MAX_CANDLES): number {
+  for (const g of sizes) {
+    if (spanMs / 1000 / g <= max) return g;
   }
-  return 86400;
+  return sizes[sizes.length - 1];
+}
+
+/**
+ * Kraken's OHLC rows, [time, open, high, low, close, vwap, volume, count] with prices as strings,
+ * oldest first, as candles. Rows that aren't candles are dropped.
+ */
+export function parseKrakenCandles(rows: unknown): Candle[] {
+  if (!Array.isArray(rows)) return [];
+  const candles: Candle[] = [];
+  for (const row of rows) {
+    if (!Array.isArray(row) || row.length < 5) continue;
+    const [time, open, high, low, close] = row.slice(0, 5).map(Number);
+    if (![time, open, high, low, close].every(Number.isFinite)) continue;
+    candles.push({ time, open, high, low, close });
+  }
+  return candles.sort((a, b) => a.time - b.time);
 }

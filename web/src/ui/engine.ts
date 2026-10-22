@@ -22,9 +22,9 @@ import {
 import { roe, safety, type OpenOrder } from "../game/money";
 import { BAILOUT, BIG_WIN, LIQUIDATED, LOSS, ROUND_LOSS, ROUND_WIN, SMALL_WIN, pick } from "../game/roasts";
 import { titleFor } from "../game/titles";
-import { ASSETS, assetById } from "../market/assets";
+import { FEATURED, assetById, sourceOf, type Source } from "../market/assets";
 import { granularityFor } from "../market/candles";
-import { connectFeed, fetchCandles, type Tick } from "../market/coinbase";
+import { CANDLE_LIMITS, connectFeed, fetchCandles, type Feed, type Tick } from "../market/feeds";
 import { loadCovered, loadGame, onGameSavedElsewhere, saveCovered, saveGame } from "../persist/game";
 import { fx, reducedMotion, toast } from "./fx/bus";
 import { play } from "./fx/sound";
@@ -102,7 +102,7 @@ export function resetGame(): void {
 // Reactions
 
 function describe(t: Pick<Trade, "asset" | "side" | "leverage">): string {
-  return `${t.leverage}× ${t.side} on ${assetById(t.asset)?.symbol ?? t.asset}`;
+  return `${t.leverage}× ${t.side} on ${assetById(t.asset).symbol}`;
 }
 
 function react(before: Game, after: Game, events: GameEvent[]): void {
@@ -127,7 +127,7 @@ function react(before: Game, after: Game, events: GameEvent[]): void {
       }
       case "round-ended": {
         const r = e.result;
-        const symbol = assetById(r.asset)?.symbol ?? r.asset;
+        const symbol = assetById(r.asset).symbol;
         if (r.outcome === "win") {
           play("win");
           fx({ type: "confetti", amount: e.streak >= 3 ? "lots" : "some" });
@@ -195,11 +195,41 @@ function checkDanger(asset: string, price: number): void {
   }
 }
 
-// The live feed
+// The live feeds: Coinbase for crypto, Kraken for stocks.
 
-let live = false;
-/** While catching up on a gap, coveredUntil stays put. */
-let catchingUp = false;
+const SOURCES: readonly Source[] = ["coinbase", "kraken"];
+const feeds: Partial<Record<Source, Feed>> = {};
+const live: Record<Source, boolean> = { coinbase: false, kraken: false };
+/** While catching up on a gap, that exchange's coveredUntil stays put. */
+const catchingUp: Record<Source, boolean> = { coinbase: false, kraken: false };
+
+/**
+ * What needs live prices, by who asked: the panels register what they show (the markets list, search
+ * results, the chart), and the game adds its open positions and round, which are always watched.
+ */
+const watching = new Map<string, readonly string[]>();
+
+function rewatch(): void {
+  const game = useGame.getState().game;
+  const ids = new Set<string>([...game.positions.map((p) => p.asset), ...(game.round ? [game.round.asset] : [])]);
+  for (const list of watching.values()) for (const id of list) ids.add(id);
+  for (const source of SOURCES) feeds[source]?.watch([...ids].filter((id) => sourceOf(id) === source));
+}
+
+let rewatchTimer: ReturnType<typeof setTimeout> | undefined;
+
+/** Asks for live prices of these assets, under a key (a later call with the key replaces them). */
+export function watchAssets(key: string, ids: readonly string[]): void {
+  watching.set(key, ids);
+  // Batched: typing in search changes the list on every key.
+  clearTimeout(rewatchTimer);
+  rewatchTimer = setTimeout(rewatch, 150);
+}
+
+export function unwatchAssets(key: string): void {
+  watchAssets(key, []);
+  watching.delete(key);
+}
 
 function handleTick(tick: Tick): void {
   receiveTick(tick);
@@ -211,49 +241,54 @@ function handleTick(tick: Tick): void {
 }
 
 /**
- * Checks Coinbase's candles for liquidations the live feed didn't see: while the page was closed, or
- * the connection was down (design.md §5).
+ * Checks an exchange's candles for liquidations its live feed didn't see: while the page was closed,
+ * or the connection was down (design.md §5).
  */
-async function catchUp(): Promise<void> {
-  if (catchingUp) return;
-  const from = loadCovered();
+async function catchUp(source: Source): Promise<void> {
+  if (catchingUp[source]) return;
+  const from = loadCovered(source);
   const now = Date.now();
-  const positions = useGame.getState().game.positions;
+  const positions = useGame.getState().game.positions.filter((p) => sourceOf(p.asset) === source);
   if (!from || now - from < 10_000 || positions.length === 0) {
-    saveCovered(now);
+    saveCovered(source, now);
     return;
   }
-  catchingUp = true;
+  catchingUp[source] = true;
   try {
-    const granularity = granularityFor(now - from);
+    const { sizes, max } = CANDLE_LIMITS[source];
+    const granularity = granularityFor(now - from, sizes, max);
     const assets = [...new Set(positions.map((p) => p.asset))];
     const candles = await Promise.all(assets.map((a) => fetchCandles(a, granularity, { start: from, end: now })));
     const byAsset = new Map(assets.map((a, i) => [a, candles[i]]));
     let step: Step = { game: useGame.getState().game, events: [] };
     for (const p of step.game.positions) {
-      const at = findLiquidation(p, byAsset.get(p.asset) ?? [], from);
+      if (!byAsset.has(p.asset)) continue;
+      const at = findLiquidation(p, byAsset.get(p.asset)!, from);
       if (at !== null) {
         const next = liquidate(step.game, p.id, at, now - at > 60_000);
         step = { game: next.game, events: [...step.events, ...next.events] };
       }
     }
     commit(step);
-    saveCovered(now);
+    saveCovered(source, now);
   } catch {
-    // Coinbase unreachable: try again soon, still from the same moment.
-    setTimeout(() => void catchUp(), 30_000);
+    // The exchange is unreachable: try again soon, still from the same moment.
+    setTimeout(() => void catchUp(source), 30_000);
   } finally {
-    catchingUp = false;
+    catchingUp[source] = false;
   }
 }
 
-/** Every few seconds: note what the feed has covered, ring the round's bell, and record a new high. */
+/** Every few seconds: note what the feeds have covered, and record a new high. */
 let lastBeat = Date.now();
 function heartbeat(): void {
   const now = Date.now();
-  // A long pause means the computer slept or the tab was frozen: the feed may have missed prices.
-  if (now - lastBeat > 15_000) void catchUp();
-  else if (live && !catchingUp) saveCovered(now);
+  // A long pause means the computer slept or the tab was frozen: the feeds may have missed prices.
+  const slept = now - lastBeat > 15_000;
+  for (const source of SOURCES) {
+    if (slept) void catchUp(source);
+    else if (live[source] && !catchingUp[source]) saveCovered(source, now);
+  }
   lastBeat = now;
   const game = useGame.getState().game;
   const value = equity(game, latest);
@@ -267,23 +302,31 @@ function checkRound(): void {
   const round = useGame.getState().game.round;
   if (!round || Date.now() < round.endsAt) return;
   const price = latest[round.asset];
-  commit(live && price ? settleRound(useGame.getState().game, price, Date.now()) : voidRound(useGame.getState().game, Date.now()));
+  const settled = live[sourceOf(round.asset)] && price;
+  commit(settled ? settleRound(useGame.getState().game, price, Date.now()) : voidRound(useGame.getState().game, Date.now()));
 }
 
-/** Starts the live feed and the game's clocks. Call once. */
+/** Starts the live feeds and the game's clocks. Call once. */
 export function startEngine(): void {
-  connectFeed(
-    ASSETS.map((a) => a.id),
-    {
+  for (const source of SOURCES) {
+    feeds[source] = connectFeed(source, {
       onTick: handleTick,
       onStatus(status) {
-        const wasLive = live;
-        live = status === "live";
-        setFeedStatus(status);
-        if (live && !wasLive) void catchUp();
+        const wasLive = live[source];
+        live[source] = status === "live";
+        setFeedStatus(source, status);
+        if (live[source] && !wasLive) void catchUp(source);
       },
-    },
-  );
+    });
+  }
+  // The featured coins and stocks are always on the markets list.
+  watchAssets("featured", FEATURED.map((a) => a.id));
+  // A new position or round is watched (and a closed one dropped) as soon as it changes.
+  let watchedGame = useGame.getState().game;
+  useGame.subscribe(({ game }) => {
+    if (game.positions !== watchedGame.positions || game.round !== watchedGame.round) rewatch();
+    watchedGame = game;
+  });
   setInterval(heartbeat, 5000);
   setInterval(checkRound, 200);
   onGameSavedElsewhere((game) => {

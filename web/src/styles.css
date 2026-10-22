@@ -339,6 +339,136 @@ dd {
   place-items: center;
 }
 
+/* Search, tabs and notes in the markets panel */
+
+.markets {
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  top: 5.5rem;
+  max-height: calc(100vh - 6.5rem);
+}
+
+.markets ul {
+  overflow-y: auto;
+  min-height: 0;
+  scrollbar-width: thin;
+}
+
+.market-search input,
+.asset-search input {
+  width: 100%;
+  padding: 0.5rem 0.7rem;
+  border: 1px solid var(--highlight);
+  border-radius: 0.6rem;
+  background: var(--bg-sunken);
+}
+
+.market-search {
+  margin-bottom: 0.6rem;
+}
+
+.market-tabs {
+  margin-bottom: 0.4rem;
+}
+
+.kind-tag {
+  margin-left: 0.35rem;
+  padding: 0 0.3rem;
+  border-radius: 0.3rem;
+  background: var(--bg-sunken);
+  color: var(--text-muted);
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  vertical-align: middle;
+}
+
+.empty.small {
+  padding: 0.75rem 0.25rem;
+  font-size: 0.85rem;
+}
+
+.note {
+  margin: 0.6rem 0 0;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.hours {
+  margin: 0.2rem 0 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.hours.open {
+  color: var(--up);
+}
+
+.hours.closed {
+  color: var(--warning);
+}
+
+/* Up or Down's picker: quick picks and a search with a dropdown */
+
+.coin-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.asset-search {
+  position: relative;
+  flex: 0 1 16rem;
+}
+
+.asset-results {
+  position: absolute;
+  top: calc(100% + 0.3rem);
+  right: 0;
+  /* Wider than the box, so names fit; never wider than the screen. */
+  width: max(100%, min(24rem, calc(100vw - 2rem)));
+  z-index: 20;
+  list-style: none;
+  margin: 0;
+  padding: 0.3rem;
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: 0.7rem;
+  box-shadow: 0 8px 24px var(--shadow);
+}
+
+.asset-results button {
+  width: 100%;
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  padding: 0.45rem 0.55rem;
+  border: 0;
+  border-radius: 0.45rem;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+}
+
+.asset-results button:hover {
+  background: var(--bg-sunken);
+}
+
+.asset-results .muted {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.asset-results .num {
+  margin-left: auto;
+}
+
 .flash-up {
   animation: flash-up 0.7s;
 }
@@ -878,13 +1008,6 @@ input[type="range"].lev-hot {
   }
 }
 
-.coin-picker {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.35rem;
-  margin-bottom: 0.75rem;
-}
-
 .updown .chart {
   height: 18rem;
 }
@@ -1309,10 +1432,16 @@ input[type="range"].lev-hot {
   .markets {
     order: -1;
     padding: 0.5rem;
+    position: static;
+    max-height: none;
   }
 
-  .markets h2 {
+  .markets .note {
     display: none;
+  }
+
+  .asset-search {
+    flex: 1 1 100%;
   }
 
   .markets ul {

@@ -10,10 +10,19 @@ import { useTheme } from "./theme";
 import { Pnl, useCountUp, useFlash } from "./widgets";
 
 const STATUS = {
-  connecting: { label: "Connecting…", hint: "Connecting to Coinbase for live prices." },
-  live: { label: "Live", hint: "Live prices from Coinbase." },
-  offline: { label: "Reconnecting…", hint: "Lost the connection to Coinbase. Trying again; nothing happens to your positions until prices come back." },
+  connecting: { label: "Connecting…", hint: "Connecting for live prices." },
+  live: { label: "Live", hint: "Live prices: crypto from Coinbase, stocks from Kraken." },
+  offline: { label: "Reconnecting…", hint: "Lost the connection for live prices. Trying again; nothing happens to your positions until prices come back." },
 };
+
+/** Both exchanges as one light: the worse of the two (an idle one, with nothing to watch, doesn't count). */
+function useFeedStatus(): keyof typeof STATUS {
+  const { coinbase, kraken } = usePrices((s) => s.status);
+  const active = [coinbase, kraken].filter((s) => s !== "idle");
+  if (active.includes("offline")) return "offline";
+  if (active.includes("connecting")) return "connecting";
+  return "live";
+}
 
 export function TopBar({ room, onStats, onReset }: { room: Room; onStats(): void; onReset(): void }) {
   const value = useEquity();
@@ -21,7 +30,7 @@ export function TopBar({ room, onStats, onReset }: { room: Room; onStats(): void
   const flash = useFlash(Math.round(value * 100));
   const title = titleFor(value);
   const bailouts = useGame((s) => s.game.stats.bailouts);
-  const status = usePrices((s) => s.status);
+  const status = useFeedStatus();
   const theme = useTheme();
   const sound = useSound();
   const [menu, setMenu] = useState(false);
