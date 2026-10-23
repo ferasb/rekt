@@ -316,8 +316,22 @@ dd {
 }
 
 .market-price {
+  flex: none;
   align-items: flex-end;
   font-size: 0.85rem;
+}
+
+/* One line each, whatever arrives: a long price mustn't wrap the name and grow the row (a layout
+   shift). In the sidebar a long name gets an ellipsis; on narrow screens the row just widens. */
+.market-name {
+  min-width: 0;
+}
+
+.market-name > *,
+.market-price > * {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .market-price .pnl {
@@ -1474,6 +1488,21 @@ input[type="range"].lev-hot {
 
   .chart {
     height: 18rem;
+  }
+
+  /* The title on its own row, the price and candle sizes under it: the same rows before and after
+     the first price, so nothing moves when it arrives. */
+  .chart-head > div:first-child {
+    flex-basis: 100%;
+  }
+
+  .chart-price {
+    margin-left: 0;
+    text-align: left;
+  }
+
+  .chart-head .presets {
+    margin-left: auto;
   }
 
   .bet {

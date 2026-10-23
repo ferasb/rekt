@@ -37,11 +37,10 @@ function ChartHeader({ asset, granularity, onGranularity }: { asset: string; gra
       </div>
       <div className="chart-price">
         <strong className="num">{price ? fmtPrice(price) : "…"}</strong>
-        {price && open ? (
-          <span>
-            <Pnl fraction={price / open - 1} /> <span className="muted">24h</span>
-          </span>
-        ) : null}
+        {/* Always two lines, so the header keeps its size when the first price arrives. */}
+        <span>
+          {price && open ? <Pnl fraction={price / open - 1} /> : <span className="muted">—</span>} <span className="muted">24h</span>
+        </span>
       </div>
       <div className="presets" role="radiogroup" aria-label="Candle size">
         {CHART_SIZES.map((s) => (
