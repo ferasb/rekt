@@ -88,7 +88,8 @@ export function App() {
         Play money, real prices (crypto from Coinbase, stocks from Kraken). Not financial advice; not even good advice.
         <br />
         Your game is saved only in this browser: no accounts, no tracking, no cookies from this site. · <a href="about.html">About</a> ·{" "}
-        <a href="privacy.html">Privacy</a> · by <a href="https://ferasbisharat.com">Feras Bisharat</a>
+        <a href="privacy.html">Privacy</a> · by <a href="https://ferasbisharat.com">Feras Bisharat</a> · also:{" "}
+        <a href="https://bloch-sphere.ferasbisharat.com">Bloch Sphere</a>
       </footer>
       {dialog === "stats" && <StatsDialog onClose={() => setDialog(null)} />}
       {dialog === "reset" && <ResetDialog onClose={() => setDialog(null)} />}
