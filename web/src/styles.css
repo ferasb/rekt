@@ -1247,6 +1247,7 @@ input[type="range"].lev-hot {
 
 /* Toasts */
 
+/* Above the film (80) and the tour (90): a film's confetti and its "Copied" must show. */
 .toasts {
   position: fixed;
   bottom: 1rem;
@@ -1255,7 +1256,7 @@ input[type="range"].lev-hot {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  z-index: 50;
+  z-index: 96;
   width: min(26rem, calc(100vw - 2rem));
   pointer-events: none;
 }
@@ -1303,7 +1304,7 @@ input[type="range"].lev-hot {
   width: 100vw;
   height: 100vh;
   pointer-events: none;
-  z-index: 60;
+  z-index: 95;
 }
 
 /* REKT */
@@ -1441,8 +1442,10 @@ input[type="range"].lev-hot {
   font-weight: 700;
 }
 
+/* Room for two lines from the start: it's filled in when the data arrives. */
 .growth {
   margin: 0.35rem 0 0;
+  min-height: 2.9em;
   color: var(--text-muted);
 }
 
@@ -1450,6 +1453,59 @@ input[type="range"].lev-hot {
   color: var(--up);
   font-family: var(--font-display);
   font-weight: 400;
+}
+
+/* An on/off switch: a real checkbox, drawn as a track with a knob. */
+.switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin-top: 0.6rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.switch input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+
+.switch-track {
+  position: relative;
+  width: 2.4rem;
+  height: 1.35rem;
+  border-radius: 999px;
+  background: var(--track);
+  transition: background 0.2s;
+}
+
+.switch-track::after {
+  content: "";
+  position: absolute;
+  top: 0.15rem;
+  left: 0.15rem;
+  width: 1.05rem;
+  height: 1.05rem;
+  border-radius: 50%;
+  background: var(--bg-raised);
+  box-shadow: 0 1px 3px var(--shadow);
+  transition: transform 0.2s;
+}
+
+.switch input:checked + .switch-track {
+  background: var(--primary);
+}
+
+.switch input:checked + .switch-track::after {
+  transform: translateX(1.05rem);
+}
+
+.switch input:focus-visible + .switch-track {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
 }
 
 .stake {
@@ -1543,8 +1599,6 @@ input[type="range"].lev-hot {
   position: absolute;
   top: 0;
   bottom: 0;
-  padding: 0;
-  border: 0;
   background: var(--band-climb);
   pointer-events: none;
   transition: background 0.2s, box-shadow 0.2s;
@@ -1557,8 +1611,7 @@ input[type="range"].lev-hot {
   border-left: 1px solid var(--down);
 }
 
-.band.hot,
-.band:focus-visible {
+.band.hot {
   background: var(--band-fall);
   box-shadow: inset 0 0 0 1px var(--down);
 }
@@ -1580,6 +1633,7 @@ input[type="range"].lev-hot {
   white-space: nowrap;
   transform: translateX(-50%);
   box-shadow: 0 2px 8px var(--shadow);
+  min-height: 24px;
   pointer-events: auto;
   cursor: pointer;
 }
@@ -1587,6 +1641,10 @@ input[type="range"].lev-hot {
 /* At the chart's left edge, a label starts at its band instead of centring on it. */
 .band-label.edge {
   transform: none;
+}
+
+.band-label.edge-right {
+  transform: translateX(-100%);
 }
 
 .band-label strong {
@@ -1704,6 +1762,121 @@ input[type="range"].lev-hot {
   font-size: 0.8rem;
   font-weight: 700;
   color: var(--primary);
+}
+
+.crash-best {
+  margin-top: 0.4rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--up);
+}
+
+.badges h2 {
+  font-size: 1rem;
+  margin: 0.5rem 0 0.6rem;
+}
+
+.badges ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(10.5rem, 1fr));
+  gap: 0.6rem;
+}
+
+/* Not earned yet: a dashed outline and a grey emoji; the text keeps its full contrast. */
+.badges li {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 0.75rem;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+}
+
+.badges li.earned {
+  border-style: solid;
+  border-color: var(--secondary);
+  background: var(--bg-raised);
+}
+
+.badges li:not(.earned) .badge-emoji {
+  filter: grayscale(1);
+  opacity: 0.55;
+}
+
+.other-crashes h2 {
+  font-size: 1rem;
+  margin: 0.25rem 0 0.6rem;
+}
+
+.other-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.other-crash {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.05rem;
+  min-width: 7.5rem;
+  padding: 0.55rem 0.8rem;
+  border: 1px solid var(--border-muted);
+  border-radius: 0.7rem;
+  background: var(--bg-raised);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s, transform 0.15s;
+}
+
+.other-crash:hover,
+.other-crash:focus-visible {
+  border-color: var(--down);
+  transform: translateY(-2px);
+}
+
+.other-crash .down {
+  color: var(--down);
+  font-family: var(--font-display);
+}
+
+.badge-emoji {
+  font-size: 1.6rem;
+}
+
+.what-if p {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.what-if input[type="month"] {
+  font: inherit;
+  font-weight: 700;
+  padding: 0.15rem 0.4rem;
+  border: 1px solid var(--highlight);
+  border-radius: 0.5rem;
+  background: var(--bg-sunken);
+}
+
+.what-if-result {
+  margin: 0.4rem 0 !important;
+}
+
+.what-if-result strong {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(1.8rem, 5vw, 2.6rem);
+}
+
+.what-if .up {
+  color: var(--up);
+}
+
+.what-if .down {
+  color: var(--down);
 }
 
 /* The film */
@@ -2120,6 +2293,13 @@ input[type="range"].lev-hot {
   justify-content: center;
   gap: 0.75rem;
   margin-top: 1rem;
+}
+
+/* Focused by the film to keep focus in it and announce them, not to show a ring. */
+.film:focus,
+.decision:focus,
+.film-end:focus {
+  outline: none;
 }
 
 .end-buttons .go {

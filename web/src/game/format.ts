@@ -10,6 +10,11 @@ export function money(value: number): string {
   return usd.format(Math.abs(value) < 0.005 ? 0 : value);
 }
 
+/** $250,000 (cents dropped when there are none), for round amounts like a stake. */
+export function dollars(value: number): string {
+  return money(value).replace(/\.00$/, "");
+}
+
 /** +$12.34 or −$12.34 (a real minus sign). */
 export function signedMoney(value: number): string {
   if (Math.abs(value) < 0.005) return money(0);

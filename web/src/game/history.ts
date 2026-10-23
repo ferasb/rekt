@@ -22,6 +22,8 @@ export interface HistoryFile {
   gaps: number[];
   /** Each day's total return, in basis points. */
   bp: number[];
+  /** The consumer price index, monthly from `from` ("YYYY-MM"). */
+  cpi: { from: string; source: string; values: number[] };
 }
 
 const DAY = 86_400;
@@ -35,6 +37,29 @@ export function decodeHistory(file: HistoryFile): Day[] {
     value *= 1 + ret;
     return { time, value, ret };
   });
+}
+
+/**
+ * The same days in today's dollars: each value times (the CPI of the last month ÷ the CPI of its
+ * month). A month past the last published CPI uses the last one. Crashes can come out longer and
+ * deeper (the 1970s), since prices rose while stocks fell.
+ */
+export function inTodaysDollars(days: readonly Day[], file: HistoryFile): Day[] {
+  const [y0, m0] = file.cpi.from.split("-").map(Number);
+  const values = file.cpi.values;
+  const cpiAt = (time: number) => {
+    const d = new Date(time * 1000);
+    const i = (d.getUTCFullYear() - y0) * 12 + d.getUTCMonth() + 1 - m0;
+    return values[Math.min(Math.max(0, i), values.length - 1)];
+  };
+  const today = cpiAt(days[days.length - 1].time);
+  const out: Day[] = [];
+  for (const d of days) {
+    const value = (d.value * today) / cpiAt(d.time);
+    const before = out[out.length - 1];
+    out.push({ time: d.time, value, ret: before ? value / before.value - 1 : 0 });
+  }
+  return out;
 }
 
 export interface Crash {
@@ -128,6 +153,38 @@ export function filmPlan(days: readonly Day[], crash: Crash): { from: number; to
 }
 
 /**
+ * Where a film stops for you to decide, as candle indexes: on the way down, once 60% of the fall has
+ * happened; and on the way back, halfway from the bottom to the highest close the film reaches after
+ * it (the old high, if it gets there). A film that ends before any climb has only the first.
+ */
+export function decisionPoints(days: readonly Day[], crash: Crash, candles: readonly Candle[]): { at: number; when: "falling" | "climbing" }[] {
+  const peakValue = days[crash.peak].value;
+  const bottomValue = days[crash.bottom].value;
+  const out: { at: number; when: "falling" | "climbing" }[] = [];
+  const down = candles.findIndex((c) => c.time > days[crash.peak].time && 1 - c.close / peakValue >= crash.drop * 0.6);
+  if (down >= 0) out.push({ at: down, when: "falling" });
+  const after = candles.findIndex((c) => c.time > days[crash.bottom].time);
+  if (after < 0) return out;
+  const top = Math.min(peakValue, Math.max(...candles.slice(after).map((c) => c.close)));
+  if (top <= bottomValue) return out;
+  const up = candles.findIndex((c, i) => i >= after && c.close >= bottomValue + (top - bottomValue) * 0.5);
+  // Not on the last candle: the film would end the moment you chose.
+  if (up > down && up < candles.length - 1) out.push({ at: up, when: "climbing" });
+  return out;
+}
+
+/**
+ * The candle that holds a date (unix seconds), or -1: a day film shows a weekend's news on the next
+ * trading day; a week film shows it on the week (Monday to Sunday) it happened in.
+ */
+export function candleFor(candles: readonly Candle[], period: Period, time: number): number {
+  if (period === "day") return candles.findIndex((c) => c.time >= time);
+  const after = candles.findIndex((c) => c.time > time);
+  const week = (after === -1 ? candles.length : after) - 1;
+  return week >= 0 && time < candles[week].time + 7 * DAY ? week : after;
+}
+
+/**
  * Screen time for each candle, in milliseconds, adding up to `total`: every candle gets a beat, and
  * the big moves get more (slow motion on the days that matter).
  */
@@ -184,8 +241,9 @@ export function outcomes(days: readonly Day[], crash: Crash, start: number, end:
   };
 }
 
-/** A title for how you did, against the plain paths. */
+/** A title for how you did, against the plain paths. No decisions (skipped to the end): just watching. */
 export function verdict(o: Outcome, choices: readonly Choice[]): { title: string; emoji: string } {
+  if (choices.length === 0) return { title: "Just watching", emoji: "🍿" };
   if (choices.includes("sell") && o.you < o.held) return { title: "Paper hands", emoji: "🧻" };
   if (choices.includes("buy") && o.you >= o.held) return { title: "Bought the dip", emoji: "🦅" };
   if (choices.every((c) => c === "hold")) return { title: "Diamond hands", emoji: "💎" };

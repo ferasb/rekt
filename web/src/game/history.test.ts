@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import usMarket from "../market/history/us-market.json";
-import { closeCandles, decide, decodeHistory, filmPlan, findCrashes, indexAt, outcomes, pacing, startHolding, verdict, worth, type Day, type HistoryFile } from "./history";
+import { matchStories } from "./crashes";
+import { candleFor, closeCandles, decide, decisionPoints, decodeHistory, filmPlan, findCrashes, inTodaysDollars, indexAt, outcomes, pacing, startHolding, verdict, worth, type Day, type HistoryFile } from "./history";
 
 const DAY = 86_400;
 /** Days from a list of values, one a day from 2020-01-01. */
@@ -9,7 +10,7 @@ const series = (values: number[]): Day[] =>
 
 describe("the data file", () => {
   it("decodes into growing values and real dates", () => {
-    const file: HistoryFile = { source: "", from: "2020-01-02", to: "", gaps: [0, 1, 3], bp: [0, 1000, -500] };
+    const file: HistoryFile = { source: "", from: "2020-01-02", to: "", gaps: [0, 1, 3], bp: [0, 1000, -500], cpi: { from: "2020-01", source: "", values: [100] } };
     const days = decodeHistory(file);
     expect(days.map((d) => new Date(d.time * 1000).toISOString().slice(0, 10))).toEqual(["2020-01-02", "2020-01-03", "2020-01-06"]);
     expect(days[1].value).toBeCloseTo(1.1);
@@ -85,6 +86,42 @@ describe("the film", () => {
   });
 });
 
+describe("every famous film", () => {
+  const file = usMarket as HistoryFile;
+  const nominal = decodeHistory(file);
+  for (const [mode, days] of [
+    ["in dollars of the time", nominal],
+    ["in today's dollars", inTodaysDollars(nominal, file)],
+  ] as const) {
+    const crashes = findCrashes(days);
+    const stories = matchStories(crashes.map((c) => ({ peak: days[c.peak].time, bottom: days[c.bottom].time })));
+    for (const [i, story] of stories) {
+      const crash = crashes[i];
+      const plan = filmPlan(days, crash);
+      const candles = closeCandles(days, plan.from, plan.to, plan.period);
+
+      it(`stops twice for ${story.name} ${mode}: falling, then climbing`, () => {
+        const points = decisionPoints(days, crash, candles);
+        expect(points.map((p) => p.when)).toEqual(["falling", "climbing"]);
+        expect(candles[points[0].at].time).toBeLessThanOrEqual(days[crash.bottom].time);
+        expect(candles[points[1].at].time).toBeGreaterThan(days[crash.bottom].time);
+        expect(points[1].at).toBeLessThan(candles.length - 1);
+      });
+
+      it(`shows every headline of ${story.name} ${mode} in its own week or on the next trading day`, () => {
+        for (const h of story.headlines) {
+          const t = Date.parse(`${h.date}T00:00:00Z`) / 1000;
+          const at = candleFor(candles, plan.period, t);
+          expect(at, h.text).toBeGreaterThanOrEqual(0);
+          const gap = candles[at].time - t;
+          if (plan.period === "day") expect(gap, h.text).toBeLessThanOrEqual(4 * DAY);
+          else expect(Math.abs(gap), h.text).toBeLessThan(7 * DAY);
+        }
+      });
+    }
+  }
+});
+
 describe("the portfolio", () => {
   it("sells, holds and buys at the day's value", () => {
     const h = startHolding(1_000_000, 250_000, 100);
@@ -106,5 +143,46 @@ describe("the portfolio", () => {
     expect(verdict(o, ["sell"]).title).toBe("Paper hands");
     expect(verdict({ ...o, you: 1000 }, ["hold"]).title).toBe("Diamond hands");
     expect(verdict({ ...o, you: 1200 }, ["buy"]).title).toBe("Bought the dip");
+    expect(verdict({ ...o, you: 1000 }, []).title).toBe("Just watching"); // skipped every decision
+  });
+});
+
+describe("today's dollars", () => {
+  const file = usMarket as HistoryFile;
+  const days = decodeHistory(file);
+  const real = inTodaysDollars(days, file);
+  const year = (y: number) => days.findIndex((d) => new Date(d.time * 1000).getUTCFullYear() === y);
+
+  it("are today's: the CPI reaches the market data's last month", () => {
+    const [y0, m0] = file.cpi.from.split("-").map(Number);
+    const [y1, m1] = file.to.split("-").map(Number);
+    expect(file.cpi.values.length).toBeGreaterThanOrEqual((y1 - y0) * 12 + m1 - m0 + 1);
+    expect(file.cpi.values.every((v) => typeof v === "number" && v > 0)).toBe(true);
+  });
+
+  it("leave the last day alone and scale old days by the prices since", () => {
+    expect(real.at(-1)!.value).toBeCloseTo(days.at(-1)!.value);
+    // Prices rose about 19-fold since 1926, so a 1926 dollar is worth about $19 today.
+    expect(real[0].value / days[0].value).toBeGreaterThan(15);
+    expect(real[0].value / days[0].value).toBeLessThan(25);
+  });
+
+  it("make the 1970s a deeper crash than in dollars of the time", () => {
+    const worst = (list: ReturnType<typeof findCrashes>, from: number, to: number) => Math.max(...list.filter((c) => c.peak >= year(from) && c.peak < year(to)).map((c) => c.drop));
+    expect(worst(findCrashes(real), 1965, 1974)).toBeGreaterThan(worst(findCrashes(days), 1965, 1974) + 0.05);
+  });
+
+  it("still find the famous crashes, merging those that become one long fall", () => {
+    const crashes = findCrashes(real);
+    const names = [...matchStories(crashes.map((c) => ({ peak: real[c.peak].time, bottom: real[c.bottom].time }))).values()].map((s) => s.name);
+    expect(names).toEqual(expect.arrayContaining(["The Great Crash", "Oil Shock", "Black Monday", "Dot-com Bust → Financial Crisis", "COVID Crash"]));
+  });
+
+  it("match every story in dollars of the time, one each", () => {
+    const crashes = findCrashes(days);
+    const stories = matchStories(crashes.map((c) => ({ peak: days[c.peak].time, bottom: days[c.bottom].time })));
+    expect([...stories.values()].map((s) => s.name).sort()).toEqual(
+      ["Black Monday", "COVID Crash", "Dot-com Bust", "Financial Crisis", "Inflation Bear", "Oil Shock", "The Great Crash"],
+    );
   });
 });

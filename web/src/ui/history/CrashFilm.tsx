@@ -1,10 +1,13 @@
 import { CandlestickSeries, ColorType, LineStyle, createChart, type IChartApi, type ISeriesApi, type Time } from "lightweight-charts";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { featsOf } from "../../game/badges";
 import type { CrashStory, Headline } from "../../game/crashes";
-import { money, signedPercent } from "../../game/format";
+import { dollars, money, signedPercent } from "../../game/format";
 import {
+  candleFor,
   closeCandles,
   decide,
+  decisionPoints,
   filmPlan,
   indexAt,
   outcomes,
@@ -17,8 +20,10 @@ import {
   type Day,
   type Holding,
 } from "../../game/history";
+import type { FilmResult } from "../../persist/history";
 import { fx, reducedMotion, toast } from "../fx/bus";
 import { play } from "../fx/sound";
+import { useModal } from "../modal";
 import { cssColor } from "../theme";
 import { useCountUp } from "../widgets";
 import { dayString, longDate, mediumDate, monthDate, span, timeToDate } from "./time";
@@ -47,6 +52,8 @@ export function CrashFilm({
   story,
   amount,
   reserve,
+  real,
+  onResult,
   onClose,
 }: {
   days: readonly Day[];
@@ -54,6 +61,10 @@ export function CrashFilm({
   story: CrashStory | undefined;
   amount: number;
   reserve: number;
+  /** In today's dollars: the money is labelled so. */
+  real: boolean;
+  /** Once, when the film reaches its end. */
+  onResult(result: FilmResult): void;
   onClose(): void;
 }) {
   const plan = useMemo(() => filmPlan(days, crash), [days, crash]);
@@ -64,29 +75,21 @@ export function CrashFilm({
   const peakValue = days[crash.peak].value;
   const name = story?.name ?? `The ${new Date(days[crash.peak].time * 1000).getUTCFullYear()} bear market`;
 
-  // The two decisions: on the way down, once 60% of the fall has happened; and on the way back, halfway up.
-  const moments = useMemo<Moment[]>(() => {
-    const out: Moment[] = [];
-    const bottomValue = days[crash.bottom].value;
-    const down = candles.findIndex((c) => c.time > days[crash.peak].time && 1 - c.close / peakValue >= crash.drop * 0.6);
-    if (down > 0) out.push({ at: down, prompt: "The news is grim and getting worse." });
-    const up = candles.findIndex((c) => c.time > days[crash.bottom].time && c.close >= bottomValue + (peakValue - bottomValue) * 0.5);
-    if (up > 0) out.push({ at: up, prompt: "It's climbing back. Is it real this time?" });
-    return out;
-  }, [candles, crash, days, peakValue]);
+  // The two decisions (game/history.ts).
+  const moments = useMemo<Moment[]>(
+    () =>
+      decisionPoints(days, crash, candles).map((p) => ({
+        at: p.at,
+        prompt: p.when === "falling" ? "The news is grim and getting worse." : "It's climbing back. Is it real this time?",
+      })),
+    [candles, crash, days],
+  );
 
-  // Headlines, on the candle that holds their date: a day film shows a weekend's news on the next
-  // trading day; a week film shows it on the week (Monday to Sunday) it happened in.
+  // Headlines, on the candle that holds their date.
   const headlines = useMemo(() => {
-    const candleFor = (t: number) => {
-      if (plan.period === "day") return candles.findIndex((c) => c.time >= t);
-      const after = candles.findIndex((c) => c.time > t);
-      const week = (after === -1 ? candles.length : after) - 1;
-      return week >= 0 && t < candles[week].time + 7 * 86_400 ? week : after;
-    };
     const list: (Headline & { at: number })[] = [];
     for (const h of story?.headlines ?? []) {
-      const at = candleFor(Date.parse(`${h.date}T00:00:00Z`) / 1000);
+      const at = candleFor(candles, plan.period, Date.parse(`${h.date}T00:00:00Z`) / 1000);
       if (at >= 0) list.push({ ...h, at });
     }
     const bottomAt = candles.findIndex((c) => c.time >= days[crash.bottom].time);
@@ -102,6 +105,11 @@ export function CrashFilm({
   const [choices, setChoices] = useState<Choice[]>([]);
   const [headline, setHeadline] = useState<(Headline & { at: number }) | null>(null);
 
+  const root = useRef<HTMLDivElement>(null);
+  useModal(root);
+  const titleCard = useRef<HTMLButtonElement>(null);
+  const decisionBox = useRef<HTMLDivElement>(null);
+  const endBox = useRef<HTMLDivElement>(null);
   const chartBox = useRef<HTMLDivElement>(null);
   /** The candles on screen, in your money; the rest of the frame is empty slots. */
   const drawn = useRef<{ time: Time; open: number; high: number; low: number; close: number }[]>([]);
@@ -147,15 +155,20 @@ export function CrashFilm({
     };
   }, [amount, candles]);
 
-  // Reveals candle i, and what it triggers (silently when skipping to the end).
-  const reveal = (i: number, quiet = false) => {
-    const k = candles[i];
-    // The chart can't update a bar before its last one (the empty slots run to the end), so the
-    // drawn candles and the remaining slots are set together: a few hundred bars at most.
-    drawn.current.push({ time: dayString(k.time) as Time, open: k.open * scale, high: k.high * scale, low: k.low * scale, close: k.close * scale });
-    series.current?.setData([...drawn.current, ...candles.slice(i + 1).map((c) => ({ time: dayString(c.time) as Time }))]);
+  // Draws the candles revealed so far. The chart can't update a bar before its last one (the empty
+  // slots run to the end), so the drawn candles and the remaining slots are set together: a few
+  // hundred bars at most.
+  const draw = () => {
+    series.current?.setData([...drawn.current, ...candles.slice(drawn.current.length).map((c) => ({ time: dayString(c.time) as Time }))]);
     // Setting data scrolls to the newest bar; the frame stays the whole film.
     chart.current?.timeScale().setVisibleLogicalRange({ from: -0.5, to: candles.length - 0.5 });
+  };
+
+  // Reveals candle i, and what it triggers (silently, and drawn later in one go, when skipping to the end).
+  const reveal = (i: number, quiet = false) => {
+    const k = candles[i];
+    drawn.current.push({ time: dayString(k.time) as Time, open: k.open * scale, high: k.high * scale, low: k.low * scale, close: k.close * scale });
+    if (!quiet) draw();
     const s = state.current;
     while (s.headlinesDone < s.headlines.length && s.headlines[s.headlinesDone].at <= i) {
       const h = s.headlines[s.headlinesDone++];
@@ -209,6 +222,14 @@ export function CrashFilm({
     return () => clearTimeout(timer);
   }, [phase]);
 
+  // Focus follows the film: the title card, the decision, the ending; else the film itself, so it
+  // never falls behind the overlay.
+  useEffect(() => {
+    const target = phase === "title" ? titleCard.current : phase === "deciding" ? decisionBox.current : phase === "end" ? endBox.current : null;
+    if (target) target.focus({ preventScroll: true });
+    else if (!root.current?.contains(document.activeElement)) root.current?.focus({ preventScroll: true });
+  }, [phase]);
+
   // Headlines fade after a while.
   useEffect(() => {
     if (!headline) return;
@@ -236,9 +257,10 @@ export function CrashFilm({
   // The end: you against the three plain paths.
   const endIndex = last ? indexAt(days, last.time) : plan.to;
   const result = phase === "end" ? outcomes(days, crash, plan.from - 1, endIndex, amount, reserve, holding) : null;
-  const grade = result ? verdict(result, choices.length ? choices : ["hold"]) : null;
+  const grade = result ? verdict(result, choices) : null;
   useEffect(() => {
-    if (!result) return;
+    if (!result || !grade) return;
+    onResult({ you: result.you, held: result.held, start: amount + reserve, title: grade.title, emoji: grade.emoji, choices, at: Date.now(), feats: featsOf({ ...result, choices }) });
     if (result.you >= result.held) {
       fx({ type: "confetti", amount: result.you > result.held * 1.05 ? "lots" : "some" });
       play("bigwin");
@@ -254,7 +276,8 @@ export function CrashFilm({
         e.preventDefault();
         setPhase(phase === "playing" ? "paused" : "playing");
       }
-      if (phase === "deciding" && ["1", "2", "3"].includes(e.key)) choose((["sell", "hold", "buy"] as const)[Number(e.key) - 1]);
+      // 3 is Buy more, which needs cash, like its button.
+      if (phase === "deciding" && ["1", "2", "3"].includes(e.key) && (e.key !== "3" || holding.cash > 0)) choose((["sell", "hold", "buy"] as const)[Number(e.key) - 1]);
       if (phase === "title" && (e.key === "Enter" || e.key === " ")) setPhase("playing");
     };
     window.addEventListener("keydown", onKey);
@@ -266,6 +289,7 @@ export function CrashFilm({
     s.moments = s.moments.slice(0, s.momentsDone); // no more decisions when skipping
     clock.current.elapsed = ends.at(-1)! + 1;
     for (let i = s.shown; i < candles.length; i++) reveal(i, true);
+    draw();
     s.shown = candles.length;
     setShown(candles.length);
     setPhase("end");
@@ -273,7 +297,7 @@ export function CrashFilm({
 
   const copy = async () => {
     if (!result || !grade) return;
-    const text = `I lived through ${name} on rekt with ${money(amount)} and ended with ${money(result.you)} (${grade.emoji} ${grade.title}). Holding would have made ${money(result.held)}. https://rekt.ferasbisharat.com/#history`;
+    const text = `I lived through ${name} on rekt with ${dollars(amount)} and ended with ${dollars(Math.round(result.you))} (${grade.emoji} ${grade.title}). Holding would have made ${dollars(Math.round(result.held))}. https://rekt.ferasbisharat.com/#history`;
     try {
       await navigator.clipboard.writeText(text);
       toast("info", "Copied", "Paste it anywhere to brag.");
@@ -294,7 +318,7 @@ export function CrashFilm({
   const decision = phase === "deciding" ? moments[state.current.momentsDone - 1] : null;
 
   return (
-    <div className={`film ${phase}`} role="dialog" aria-modal="true" aria-label={`${name}, as a film`}>
+    <div className={`film ${phase}`} ref={root} tabIndex={-1} role="dialog" aria-modal="true" aria-label={`${name}, as a film`}>
       <div className="letterbox top" aria-hidden="true" />
       <div className="letterbox bottom" aria-hidden="true" />
 
@@ -305,14 +329,14 @@ export function CrashFilm({
             <span className="hud-name">{name}</span>
           </div>
           <div className="hud-money">
-            <span className="hud-label">Your money</span>
+            <span className="hud-label">Your money{real ? ", in today's dollars" : ""}</span>
             <strong className={you >= start ? "up" : "down"}>{money(youShown)}</strong>
             <span className={`pnl ${you >= start ? "up" : "down"}`}>
               <span aria-hidden="true">{you >= start ? "▲ " : "▼ "}</span>
               {signedPercent(you / start - 1, 1)}
             </span>
             <span className="hud-cash">
-              Invested {money(holding.units * value).replace(/\.\d\d$/, "")} · Cash {money(holding.cash).replace(/\.\d\d$/, "")}
+              Invested {dollars(Math.round(holding.units * value))} · Cash {dollars(Math.round(holding.cash))}
             </span>
           </div>
           <div className="hud-drop" aria-label={`The market is ${Math.round(fromHigh * 100)}% below its high`}>
@@ -335,7 +359,7 @@ export function CrashFilm({
       </div>
 
       {phase === "title" && (
-        <button type="button" className="title-card" onClick={() => setPhase("playing")} aria-label="Start the film">
+        <button type="button" className="title-card" ref={titleCard} onClick={() => setPhase("playing")} aria-label="Start the film">
           <span className="title-emoji" aria-hidden="true">
             {story?.emoji ?? "📉"}
           </span>
@@ -343,16 +367,16 @@ export function CrashFilm({
           <span className="title-name">{name}</span>
           {story && <span className="title-tag">{story.tagline}</span>}
           <span className="title-stake">
-            You have <strong>{money(amount)}</strong> in the US stock market{reserve > 0 ? <>, and {money(reserve)} in cash.</> : "."}
+            You have <strong>{dollars(amount)}</strong> in the US stock market{reserve > 0 ? <>, and {dollars(reserve)} in cash.</> : "."}
           </span>
         </button>
       )}
 
       {decision && (
-        <div className="decision" role="alertdialog" aria-labelledby="decision-title">
+        <div className="decision" ref={decisionBox} tabIndex={-1} role="alertdialog" aria-labelledby="decision-title">
           <p className="decision-when">{longDate(last?.time ?? days[plan.from].time)}</p>
           <h2 id="decision-title">
-            Your {money(start).replace(/\.00$/, "")} is now <span className={you >= start ? "up" : "down"}>{money(you)}</span> ({signedPercent(you / start - 1, 1)}).
+            Your {dollars(start)} is now <span className={you >= start ? "up" : "down"}>{money(you)}</span> ({signedPercent(you / start - 1, 1)}).
           </h2>
           <p className="muted">{decision.prompt} What do you do?</p>
           <div className="decision-buttons">
@@ -368,7 +392,7 @@ export function CrashFilm({
             </button>
             <button type="button" className="choice buy" disabled={holding.cash <= 0} onClick={() => choose("buy")}>
               <span aria-hidden="true">🛒</span> Buy more
-              <small>{holding.cash > 0 ? `Put in your ${money(holding.cash)} cash` : "No cash left"}</small>
+              <small>{holding.cash > 0 ? `Put in your ${dollars(Math.round(holding.cash))} cash` : "No cash left"}</small>
               <kbd>3</kbd>
             </button>
           </div>
@@ -376,7 +400,7 @@ export function CrashFilm({
       )}
 
       {result && grade && (
-        <div className="film-end" role="alertdialog" aria-labelledby="end-title">
+        <div className="film-end" ref={endBox} tabIndex={-1} role="alertdialog" aria-labelledby="end-title">
           <span className="end-emoji" aria-hidden="true">
             {grade.emoji}
           </span>
@@ -399,7 +423,7 @@ export function CrashFilm({
             ))}
           </ul>
           <p className="muted small">
-            Each path starts with {money(amount)} invested and {money(reserve)} in cash on {mediumDate(days[plan.from].time)}, and ends on{" "}
+            Each path starts with {dollars(amount)} invested and {dollars(reserve)} in cash on {mediumDate(days[plan.from].time)}, and ends on{" "}
             {mediumDate(days[endIndex].time)}.
           </p>
           <div className="end-buttons">

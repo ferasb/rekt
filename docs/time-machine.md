@@ -1,22 +1,23 @@
 # Time Machine: plan
 
-*Draft for Feras. Nothing is built yet.*
+*Built on the `history-prototype` branch: §2–§4 below, except what §7 lists as still to do.*
 
 A new room, **History** (`#history`): 150 years of the stock market on one chart, with every crash marked in red. Tap a crash and the camera dives into it, and the crash plays like a short film: your money on screen, the headlines of the time, and a few moments where you decide whether to panic. The aims are a game that's fun, polished and obvious to use.
 
 ## 1. The data
 
-- **S&P 500, monthly, January 1871 to last month**, from Robert Shiller's dataset (Yale): prices, dividends and inflation (CPI). It's published for research and teaching and used everywhere, with no formal licence; we credit it on the About page. It's bundled with the site (about 20 kB compressed), so no new connection is made.
-- **What it can't do:** these are monthly averages, so fast crashes look milder (1987: −27% instead of −34%; COVID 2020: about −19%). The chart says "monthly averages" wherever it matters.
-- **Not possible legally:** daily S&P 500 data (S&P Dow Jones Indices owns it, and FRED forbids reproducing it), and long histories of individual stocks. Free downloads of those are scraped from Yahoo, whose terms forbid redistribution.
-- **Later:** Bitcoin and Ether, daily since 2015, from Coinbase (the same public API the game already uses).
+- **The whole US stock market, daily, July 1926 to last month**, dividends reinvested: Mkt-RF + RF from the **Kenneth R. French Data Library** (Fama/French 3 Factors, daily), the value-weighted return of every US company on the NYSE, AMEX and NASDAQ (CRSP). It tracks the S&P 500 closely: 10.2% a year since 1927 against 10.4%, with the same crash dates. Openly published for research and teaching with no licence or restrictions stated, and credited on the About page.
+- **Why not the S&P 500 itself:** its daily data belongs to S&P Dow Jones Indices, FRED says it "may not be reproduced", and the free downloads are scraped from Yahoo. Robert Shiller's free monthly S&P 500 data was the first plan, but monthly averages soften fast crashes (COVID shows as −19% instead of −34%), and Feras wanted crashes at their real strength and speed.
+- **Inflation:** the US consumer price index (CPI-U, BLS: public domain), monthly, via FRED. A month the BLS never published (October 2025, the shutdown) is filled in with the geometric mean of the months either side; the build stops on a longer gap, or if the CPI ends more than two months before the market data.
+- `scripts/build-history.mjs` turns both into `web/src/market/history/us-market.json`: daily returns in basis points and day gaps, plus the monthly CPI. About 42 kB compressed, loaded only when the room opens. Rerun it with new downloads to bring the data up to date.
+- The data has closing prices only, so candles are built from closes (each opens at the close before): nothing in between is invented.
 
 ## 2. The long view (the room's main screen)
 
-- **The chart:** the S&P 500 from 1871 to today on a log scale (otherwise 1929 is invisible next to 2026). A smooth line over a glowing gradient. Drag to pan, pinch or scroll to zoom, and a mini-map underneath shows where you are.
-- **Red bands:** every fall of 20% or more from a peak, computed from the data, not typed in by hand. Shiller's data has 13 of them since 1871. Each band carries a label, for example "1929 · Great Crash · −85%". The famous ones also have a name and a story; the rest are "Bear market 1906".
-- **Hover or tap a band:** a card shows peak → bottom, how long the fall took, and how long until the old peak came back (1929: 25 years).
-- **Two toggles:** *Adjust for inflation* and *Reinvest dividends*. They change the story a lot, and showing that is part of the point. From the 1929 peak, the money came back after **25 years** on price alone (1954), **15** with dividends reinvested (1945), and **7** with dividends and inflation counted (1936; prices fell in the 1930s). These figures are checked against the data.
+- **The chart:** the US market from 1926 to today on a log scale (otherwise 1929 is invisible next to 2026). A smooth line over a glowing gradient. Drag to pan, pinch or scroll to zoom, and a mini-map underneath shows where you are.
+- **Red bands:** every fall of 20% or more from a peak, computed from the data, not typed in by hand: 16 since 1926 (14 in today's dollars, where some merge). The chart's own click and hover events find the band (the canvas sits above it), so dragging and zooming keep working; the bands stay buttons for the keyboard. Each band carries a label, for example "1929 · Great Crash · −85%". The famous ones also have a name and a story; the rest are "Bear market 1906".
+- **Hover or tap a band:** a card shows peak → bottom, how long the fall took, and how long until the old peak came back (1929: 15 years, in 1945, dividends reinvested).
+- **One switch:** *Adjust for inflation* (dividends are always reinvested, since the data is total return). They change the story a lot, and showing that is part of the point. From the 1929 peak, the money came back after **15 years** with dividends reinvested (February 1945), and also about **15** counting inflation (prices fell in the early 1930s, then rose in the war, and the two about cancel out). On price alone it was famously 25 years (the Dow, 1954), but this data always includes dividends. In today's dollars, though, the 1970s become one −57% fall from 1968 that took until 1983 to recover. These figures are checked against the data (`findCrashes`).
 - **The amount chip:** "Starting with **$1,000,000** ▾", with presets ($1,000, $10,000, $100,000, $1,000,000) and your own figure. It can also be set from outside through the address, `#history?amount=250000`, so a link can say "what if you had $250k in 2008".
 - **First visit:** three coach marks, which you can skip and which never come back: "150 years of the US stock market" → "Red means a crash. Tap one" → "Choose how much you start with".
 
@@ -69,3 +70,9 @@ This room barely touches the live game. It has its own pure model and its own ch
 4. Polish: phones, reduced motion, the "what if" bar, About and Privacy updates, and Lighthouse.
 
 Effort: about 5–6 sessions in all, the prototype included.
+
+## 7. Status (on the branch)
+
+Built: the long view (bands, labels in non-overlapping rows, cards, the inflation switch, the stake chip and `?amount=`, the tour), the film (dive, title card, candles paced with slow motion on big days, the readout, headlines, two decisions, the result against three paths), best results per crash, badges, and the "what if" calculator. 92 tests.
+
+Still to do: Lighthouse and a performance pass on the 26,000-point chart on phones, a share image, and more crashes' stories (1946, 1962, 1990, 1998, 2018 and 2025 have bands but no names yet).

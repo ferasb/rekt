@@ -60,13 +60,14 @@ export function LongView({
   const [diving, setDiving] = useState(false);
   const theme = useTheme((s) => s.theme);
   // For the chart's own click and hover events, made once: always the latest props.
-  const latest = useRef({ crashes, onPick });
-  latest.current = { crashes, onPick };
+  const latest = useRef({ crashes, onPick, days });
+  latest.current = { crashes, onPick, days };
 
   // Where each band is on screen: recomputed whenever the view moves.
   const place = () => {
     const c = chart.current;
     if (!c) return;
+    const { days, crashes } = latest.current;
     const x = (i: number) => c.timeScale().timeToCoordinate(dayString(days[i].time) as Time) ?? NaN;
     const width = c.timeScale().width();
     setBands(
@@ -90,8 +91,6 @@ export function LongView({
       handleScale: { axisPressedMouseMove: { time: true, price: false } },
     });
     const s = c.addSeries(AreaSeries, { ...chartColors().line, lineWidth: 2, priceLineVisible: false, lastValueVisible: false });
-    s.setData(days.map((d) => ({ time: dayString(d.time) as Time, value: d.value })));
-    c.timeScale().fitContent();
     chart.current = c;
     series.current = s;
     c.timeScale().subscribeVisibleLogicalRangeChange(place);
@@ -100,7 +99,7 @@ export function LongView({
     const crashAt = (logical: number | undefined) => {
       if (logical === undefined) return null;
       const i = Math.round(logical);
-      const index = latest.current.crashes.findIndex((cr) => i >= cr.peak && i <= (cr.recovery ?? days.length - 1));
+      const index = latest.current.crashes.findIndex((cr) => i >= cr.peak && i <= (cr.recovery ?? latest.current.days.length - 1));
       return index === -1 ? null : index;
     };
     c.subscribeClick((param) => {
@@ -120,8 +119,17 @@ export function LongView({
       c.remove();
       chart.current = series.current = null;
     };
-    // Made once: the data never changes while the room is open.
+    // Made once; the data is set below, and again when it changes (the inflation switch).
   }, []);
+
+  useEffect(() => {
+    // The old bands belong to the old crash list: drop them before placing the new ones.
+    setBands([]);
+    setHovered(null);
+    series.current?.setData(days.map((d) => ({ time: dayString(d.time) as Time, value: d.value })));
+    chart.current?.timeScale().fitContent();
+    requestAnimationFrame(place);
+  }, [days, crashes]);
 
   useEffect(() => {
     const colors = chartColors();
@@ -162,6 +170,7 @@ export function LongView({
     },
   }));
 
+  const plotWidth = chart.current?.timeScale().width() ?? Infinity;
   // Labels in rows, so neighbours never overlap: each goes in the first row with room left of it.
   const LABEL_WIDTH = 96;
   const rowEnds: number[] = [];
@@ -173,39 +182,40 @@ export function LongView({
     labelRow.set(b.index, row);
   }
 
-  const card = hovered !== null ? crashes[hovered] : null;
+  const card = hovered !== null ? (crashes[hovered] ?? null) : null;
   const cardBand = bands.find((b) => b.index === hovered);
   const width = chart.current?.timeScale().width() ?? 0;
 
   return (
     <div className={`long-view ${diving ? "diving" : ""}`}>
       <div className="long-chart" ref={box} />
-      <div className="bands" aria-label="Crashes">
+      <div className="bands" aria-hidden="true">
         {bands.map((b) => {
           const crash = crashes[b.index];
+          if (!crash) return null; // placed for a list that has since changed
           const story = stories.get(b.index);
           const fall = Math.max(6, b.bottom - b.peak);
+          const year = new Date(days[crash.peak].time * 1000).getUTCFullYear();
           return (
-            <button
-              key={b.index}
-              type="button"
-              className={`band ${story ? "famous" : ""} ${hovered === b.index ? "hot" : ""}`}
-              style={{ left: b.peak, width: Math.max(fall, b.end - b.peak) }}
-              onMouseEnter={() => setHovered(b.index)}
-              onMouseLeave={() => setHovered((h) => (h === b.index ? null : h))}
-              onFocus={() => setHovered(b.index)}
-              onBlur={() => setHovered((h) => (h === b.index ? null : h))}
-              onClick={() => onPick(b.index)}
-              aria-label={`${story?.name ?? "Crash"} from ${mediumDate(days[crash.peak].time)}: down ${Math.round(crash.drop * 100)}%. Play it.`}
-            >
+            // Decoration: the chart's own click and hover find the crash, and the crash cards below the
+            // chart are the buttons (for the keyboard and screen readers, every crash has one).
+            <div key={b.index} className={`band ${story ? "famous" : ""} ${hovered === b.index ? "hot" : ""}`} style={{ left: b.peak, width: Math.max(fall, b.end - b.peak) }}>
               <span className="band-fall" style={{ width: fall }} />
               {story && (
-                <span className={`band-label ${b.peak < LABEL_WIDTH / 2 ? "edge" : ""}`} style={{ top: 8 + (labelRow.get(b.index) ?? 0) * 30 }}>
-                  <span aria-hidden="true">{story.emoji}</span> {new Date(days[crash.peak].time * 1000).getUTCFullYear()}
+                <button
+                  type="button"
+                  tabIndex={-1}
+                  className={`band-label ${b.peak < LABEL_WIDTH / 2 ? "edge" : b.peak > plotWidth - LABEL_WIDTH / 2 ? "edge-right" : ""}`}
+                  style={{ top: 8 + (labelRow.get(b.index) ?? 0) * 30 }}
+                  onClick={() => onPick(b.index)}
+                  onMouseEnter={() => setHovered(b.index)}
+                  onMouseLeave={() => setHovered((h) => (h === b.index ? null : h))}
+                >
+                  <span aria-hidden="true">{story.emoji}</span> {year}
                   <strong>−{Math.round(crash.drop * 100)}%</strong>
-                </span>
+                </button>
               )}
-            </button>
+            </div>
           );
         })}
       </div>

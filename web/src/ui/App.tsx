@@ -12,6 +12,7 @@ import { loadAsset, saveAsset, useRoom } from "./rooms";
 import { TopBar } from "./TopBar";
 import { UpDown } from "./UpDown";
 import { HistoryRoom } from "./history/HistoryRoom";
+import { ErrorBoundary } from "./ErrorBoundary";
 import { usePrices } from "./prices";
 import { Pnl } from "./widgets";
 import { price as fmtPrice } from "../game/format";
@@ -85,7 +86,9 @@ export function App() {
       ) : room === "updown" ? (
         <UpDown asset={asset} onPick={pick} />
       ) : (
-        <HistoryRoom />
+        <ErrorBoundary label="History">
+          <HistoryRoom />
+        </ErrorBoundary>
       )}
       <footer className="footer">
         Play money, real prices (crypto from Coinbase, stocks from Kraken). Not financial advice; not even good advice.

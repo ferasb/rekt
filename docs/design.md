@@ -11,9 +11,9 @@ Lives at `rekt.ferasbisharat.com`. A static site (Vite, React, TypeScript, Zusta
 - **Nothing to sign up for.** Everything lives in the visitor's browser (§7).
 - **Nothing hidden.** The only outside connections are to Coinbase's and Kraken's public market data (§6), and the privacy page says so.
 
-## 2. Two rooms
+## 2. Three rooms
 
-The top bar switches between them (the URL hash: `#trade`, `#updown`). The balance is shared.
+The top bar switches between them (the URL hash: `#trade`, `#updown`, `#history`). Trade and Up or Down share the balance; History has its own money and never touches it.
 
 ### 2.1 Trade (the desk)
 
@@ -31,6 +31,10 @@ Quick rounds: pick a coin or stock (quick picks, or search), a stake and a durat
 - exactly the same price: the stake comes back (a push).
 
 The end price is the last one seen before the clock ran out (`markRound` in `game/game.ts`), not whatever is current when the page gets round to settling: a background tab's timers can fire long after the end. No house edge: it's a coin flip against the market. A win streak shows as 🔥×n; after a win, **Let it ride** bets the whole payout again. One round at a time.
+
+### 2.3 History
+
+A century of US stock market crashes, each playable as a film, with decisions and a result: see [`time-machine.md`](time-machine.md).
 
 ## 3. The player
 

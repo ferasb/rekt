@@ -98,8 +98,46 @@ export const CRASH_STORIES: readonly CrashStory[] = [
   },
 ];
 
-const byPeak = new Map(CRASH_STORIES.map((s) => [s.peak, s]));
+/** How far (in days) a crash's peak may be from a story's and still be that story. */
+const NEAR_DAYS = 400;
 
-export function storyFor(peakDate: string): CrashStory | undefined {
-  return byPeak.get(peakDate);
+/**
+ * Each crash's story, by crash index. A story belongs to the crash whose fall (peak to bottom)
+ * contains the story's peak, or else whose peak is within about a year of it: adjusting for
+ * inflation can move a peak, and can merge two crashes into one long one (in today's dollars,
+ * 2000 to 2009 is a single fall). Then the stories merge too: "Dot-com Bust → Financial Crisis",
+ * with both sets of headlines.
+ */
+export function matchStories(crashes: readonly { peak: number; bottom: number }[]): Map<number, CrashStory> {
+  const found = new Map<number, CrashStory[]>();
+  for (const story of CRASH_STORIES) {
+    const t = Date.parse(`${story.peak}T00:00:00Z`) / 1000;
+    let index = crashes.findIndex((c) => t >= c.peak && t <= c.bottom);
+    if (index === -1) {
+      let nearest = Infinity;
+      crashes.forEach((c, i) => {
+        const gap = Math.abs(c.peak - t);
+        if (gap <= NEAR_DAYS * 86_400 && gap < nearest) {
+          nearest = gap;
+          index = i;
+        }
+      });
+    }
+    if (index !== -1) found.set(index, [...(found.get(index) ?? []), story]);
+  }
+  const out = new Map<number, CrashStory>();
+  for (const [index, stories] of found) {
+    if (stories.length === 1) {
+      out.set(index, stories[0]);
+      continue;
+    }
+    out.set(index, {
+      peak: stories[0].peak,
+      name: stories.map((s) => s.name).join(" → "),
+      emoji: stories[0].emoji,
+      tagline: `${stories[0].tagline} Then: ${stories.slice(1).map((s) => s.tagline.charAt(0).toLowerCase() + s.tagline.slice(1)).join(" Then: ")}`,
+      headlines: stories.flatMap((s) => s.headlines).sort((a, b) => a.date.localeCompare(b.date)),
+    });
+  }
+  return out;
 }
