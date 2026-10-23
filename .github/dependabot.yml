@@ -1,0 +1,25 @@
+# Dependency updates: one grouped pull request a week for the site's packages, one for the
+# workflows' actions. CI runs on each; merging to main deploys. Releases wait a week first, so a
+# broken or compromised version is usually caught (and pulled) before it reaches here. Major
+# versions come as their own pull requests, since they can need code changes.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /web
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    groups:
+      dependencies:
+        patterns: ["*"]
+        update-types: [minor, patch]
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    groups:
+      actions:
+        patterns: ["*"]
