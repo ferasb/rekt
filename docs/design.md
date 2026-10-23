@@ -30,7 +30,7 @@ Quick rounds: pick a coin or stock (quick picks, or search), a stake and a durat
 - wrong call: the stake is gone;
 - exactly the same price: the stake comes back (a push).
 
-No house edge: it's a coin flip against the market. A win streak shows as 🔥×n; after a win, **Let it ride** bets the whole payout again. One round at a time.
+The end price is the last one seen before the clock ran out (`markRound` in `game/game.ts`), not whatever is current when the page gets round to settling: a background tab's timers can fire long after the end. No house edge: it's a coin flip against the market. A win streak shows as 🔥×n; after a win, **Let it ride** bets the whole payout again. One round at a time.
 
 ## 3. The player
 

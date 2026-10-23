@@ -6,7 +6,9 @@ import {
   canBailout,
   checkLiquidations,
   close,
+  closingPrice,
   equity,
+  markRound,
   newGame,
   notePeak,
   open,
@@ -155,5 +157,30 @@ describe("going broke", () => {
     const game = newGame(0);
     expect(notePeak(game, 5000)).toBe(game);
     expect(notePeak(game, 12_000).stats.allTimeHigh).toBe(12_000);
+  });
+});
+
+describe("closing price of a round", () => {
+  const round = startRound(newGame(0), { asset: "BTC-USD", call: "up", stake: 100, duration: 60_000, price: 100 }, "r1", 1000).game.round!;
+
+  it("is the last price before the end, not one that came after", () => {
+    let mark = markRound(null, round, "BTC-USD", 101, 30_000);
+    mark = markRound(mark, round, "BTC-USD", 102, 61_000); // the end: still counts
+    mark = markRound(mark, round, "BTC-USD", 95, 61_001); // after the end: ignored
+    expect(closingPrice(round, mark)).toBe(102);
+  });
+
+  it("ignores other assets and a round that's over", () => {
+    expect(markRound(null, round, "ETH-USD", 5, 2000)).toBeNull();
+    expect(markRound(null, null, "BTC-USD", 5, 2000)).toBeNull();
+  });
+
+  it("is the start price when nothing traded", () => {
+    expect(closingPrice(round, null)).toBe(100);
+  });
+
+  it("doesn't carry over from an earlier round", () => {
+    const other = { ...round, id: "r2" };
+    expect(closingPrice(other, markRound(null, round, "BTC-USD", 120, 2000))).toBe(100);
   });
 });

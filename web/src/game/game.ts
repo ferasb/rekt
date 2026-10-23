@@ -298,6 +298,27 @@ function finishRound(game: Game, outcome: RoundOutcome, endPrice: number | null,
   };
 }
 
+/** The last price seen on a running round's asset while its clock ran: the price it settles at. */
+export interface RoundMark {
+  roundId: string;
+  price: number;
+}
+
+/**
+ * Notes a price for the running round, if it's on the round's asset and before the round's end (by
+ * this page's clock). Settling uses this, not the newest price: a background tab's timers can fire
+ * long after the end, by which time the price has moved on.
+ */
+export function markRound(mark: RoundMark | null, round: Round | null, asset: string, price: number, now: number): RoundMark | null {
+  if (!round || asset !== round.asset || now > round.endsAt) return mark;
+  return { roundId: round.id, price };
+}
+
+/** The price a round ends at: the last one marked before its end, or its start price if none came (nothing traded). */
+export function closingPrice(round: Round, mark: RoundMark | null): number {
+  return mark?.roundId === round.id ? mark.price : round.startPrice;
+}
+
 /** Ends the running round at this price. */
 export function settleRound(game: Game, endPrice: number, now: number): Step {
   if (!game.round) return { game, events: [] };

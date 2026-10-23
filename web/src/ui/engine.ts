@@ -5,8 +5,10 @@ import {
   bailout,
   checkLiquidations,
   close,
+  closingPrice,
   equity,
   liquidate,
+  markRound,
   newGame,
   notePeak,
   open,
@@ -16,6 +18,7 @@ import {
   type Call,
   type Game,
   type GameEvent,
+  type RoundMark,
   type Step,
   type Trade,
 } from "../game/game";
@@ -231,9 +234,13 @@ export function unwatchAssets(key: string): void {
   watching.delete(key);
 }
 
+/** The running round's closing price so far (game.ts markRound). */
+let roundMark: RoundMark | null = null;
+
 function handleTick(tick: Tick): void {
   receiveTick(tick);
   const game = useGame.getState().game;
+  roundMark = markRound(roundMark, game.round, tick.asset, tick.price, Date.now());
   if (game.positions.some((p) => p.asset === tick.asset)) {
     commit(checkLiquidations(game, tick.asset, tick.price, Date.now()));
     checkDanger(tick.asset, tick.price);
@@ -301,9 +308,10 @@ function heartbeat(): void {
 function checkRound(): void {
   const round = useGame.getState().game.round;
   if (!round || Date.now() < round.endsAt) return;
-  const price = latest[round.asset];
-  const settled = live[sourceOf(round.asset)] && price;
-  commit(settled ? settleRound(useGame.getState().game, price, Date.now()) : voidRound(useGame.getState().game, Date.now()));
+  // At the price when the clock ran out, however late this timer fires (a background tab slows it).
+  const game = useGame.getState().game;
+  const now = Date.now();
+  commit(live[sourceOf(round.asset)] ? settleRound(game, closingPrice(round, roundMark), now) : voidRound(game, now));
 }
 
 /** Starts the live feeds and the game's clocks. Call once. */
