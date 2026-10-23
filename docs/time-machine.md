@@ -41,7 +41,7 @@ A new room, **History** (`#history`): 150 years of the stock market on one chart
 
 ## 4. The extras that make it feel finished
 
-- **Crash cards:** a row under the chart with a card per famous crash (illustrated icon, year, drop, recovery time). Your result and grade appear once you've played it, so it doubles as a progress collection: "4 of 6 survived".
+- **Crash cards:** a row under the chart with a card per famous crash (illustrated icon, year, drop, recovery time). Your result and grade appear once you've played it, so it doubles as a progress collection: "4 of 6 survived". Each has an ⓘ button: a popup with what happened, in a few sentences (`about` in `crashes.ts`, facts only), a link to its Wikipedia article, and a button into the film. A merged crash (in today's dollars) shows each of its stories.
 - **Badges:** "Survived 1929", "Held through 2008", "Bought every bottom", "Played them all".
 - **The "what if" bar:** "If you'd put $1,000,000 in on [Jan 1990 ▾], today you'd have **$X**" (with or without inflation and dividends), counting up.
 - **Sound and motion:** a whoosh for the dive, a tick on each new low, a heartbeat at the bottom, a chime for a full recovery. With reduced motion, no flying camera, letterbox or count-ups; the same story, as cross-fades.
@@ -73,6 +73,6 @@ Effort: about 5–6 sessions in all, the prototype included.
 
 ## 7. Status (on the branch)
 
-Built: the long view (bands, labels in non-overlapping rows, cards, the inflation switch, the stake chip and `?amount=`, the tour), the film (dive, title card, candles paced with slow motion on big days, the readout, headlines, two decisions, the result against three paths), best results per crash, badges, and the "what if" calculator. 92 tests.
+Built: the long view (bands, labels in non-overlapping rows, cards, the inflation switch, the stake chip and `?amount=`, the tour), the film (dive, title card, candles paced with slow motion on big days, the readout, headlines, two decisions, the result against three paths), best results per crash, badges, and the "what if" calculator, and an info popup per famous crash with its Wikipedia link. 93 tests.
 
 Still to do: Lighthouse and a performance pass on the 26,000-point chart on phones, a share image, and more crashes' stories (1946, 1962, 1990, 1998, 2018 and 2025 have bands but no names yet).

@@ -5,15 +5,26 @@ import { TITLES, titleFor } from "../game/titles";
 import { resetGame, takeBailout, useEquity, useGame } from "./engine";
 
 /** A native <dialog>, open while mounted: focus, Escape and the backdrop come for free. */
-function Dialog({ title, onClose, children }: { title: string; onClose(): void; children: ReactNode }) {
+export function Dialog({ title, onClose, children }: { title: string; onClose(): void; children: ReactNode }) {
   const ref = useRef<HTMLDialogElement>(null);
   useEffect(() => {
     const d = ref.current!;
     d.showModal();
+    // showModal focuses the first control; a dialog can name another with data-autofocus. (React's
+    // autoFocus can't: it runs while the dialog is still closed, and hidden.)
+    d.querySelector<HTMLElement>("[data-autofocus]")?.focus();
     return () => d.close();
   }, []);
   return (
-    <dialog ref={ref} className="dialog" aria-labelledby="dialog-title" onClose={onClose} onClick={(e) => e.target === ref.current && onClose()}>
+    <dialog
+      ref={ref}
+      className="dialog"
+      aria-labelledby="dialog-title"
+      // A close event while open again is StrictMode's rerun (close, then showModal): not a real close.
+      onClose={() => !ref.current?.open && onClose()}
+      // The backdrop closes it the native way, which gives focus back to what opened it.
+      onClick={(e) => e.target === ref.current && ref.current.close()}
+    >
       <h2 id="dialog-title">{title}</h2>
       {children}
     </dialog>

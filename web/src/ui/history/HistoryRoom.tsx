@@ -1,9 +1,10 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from "react";
 import { badges } from "../../game/badges";
-import { matchStories } from "../../game/crashes";
+import { matchStories, type CrashStory } from "../../game/crashes";
 import { dollars } from "../../game/format";
 import { decodeHistory, findCrashes, inTodaysDollars, indexAt, type Day, type HistoryFile } from "../../game/history";
 import { keepBest, loadResults, saveResults, type FilmResult, type Results } from "../../persist/history";
+import { Dialog } from "../Dialogs";
 import { reducedMotion } from "../fx/bus";
 import { useModal } from "../modal";
 import { useCountUp } from "../widgets";
@@ -133,6 +134,38 @@ function WhatIf({ days, stake, real }: { days: readonly Day[]; stake: number; re
   );
 }
 
+/** A famous crash's info popup: what happened, in a few sentences, a link to read more, and a way in. */
+function CrashInfo({ story, facts, onPlay, onClose }: { story: CrashStory; facts: string; onPlay(): void; onClose(): void }) {
+  const parts = story.parts ?? [story];
+  return (
+    <Dialog title={`${story.emoji} ${story.name}`} onClose={onClose}>
+      <p className="crash-info-facts muted small">{facts}</p>
+      {parts.map((p) => (
+        <section key={p.peak} className="crash-info-part">
+          {parts.length > 1 && (
+            <h3>
+              <span aria-hidden="true">{p.emoji}</span> {p.name}
+            </h3>
+          )}
+          <p>{p.about}</p>
+          <a href={p.wiki} target="_blank" rel="noopener noreferrer">
+            {parts.length > 1 ? `${p.name} on Wikipedia` : "Read more on Wikipedia"} <span aria-hidden="true">↗</span>
+            <span className="sr-only"> (opens in a new tab)</span>
+          </a>
+        </section>
+      ))}
+      <div className="dialog-actions">
+        <button type="button" className="link" onClick={(e) => e.currentTarget.closest("dialog")?.close()}>
+          Close
+        </button>
+        <button type="button" className="go" data-autofocus onClick={onPlay}>
+          ▶ Live through it
+        </button>
+      </div>
+    </Dialog>
+  );
+}
+
 /** The first visit's tips, each pointing at what it explains. */
 function Tour({ steps, onDone }: { steps: { target: RefObject<HTMLElement | null>; title: string; text: string }[]; onDone(): void }) {
   const [step, setStep] = useState(0);
@@ -203,6 +236,8 @@ export function HistoryRoom() {
   const [failed, setFailed] = useState(false);
   const [stake, setStake] = useState(initialStake);
   const [film, setFilm] = useState<number | null>(null);
+  /** The crash whose info popup is open. */
+  const [info, setInfo] = useState<number | null>(null);
   const [results, setResults] = useState<Results>(loadResults);
   const [tour, setTour] = useState(() => {
     try {
@@ -352,22 +387,27 @@ export function HistoryRoom() {
         {famous.map(([i, s]) => {
           const c = crashes[i];
           return (
-            <button key={i} type="button" className="crash-card" onClick={() => pick(i)}>
-              <span className="crash-emoji" aria-hidden="true">
-                {s.emoji}
-              </span>
-              <span className="crash-year">{new Date(days[c.peak].time * 1000).getUTCFullYear()}</span>
-              <strong>{s.name}</strong>
-              <span className="crash-drop">−{Math.round(c.drop * 100)}%</span>
-              <span className="muted small">{span(days[c.peak].time, days[c.bottom].time, c.bottom - c.peak)} down</span>
-              {results[keyOf(i)] ? (
-                <span className="crash-best">
-                  Best: {results[keyOf(i)].emoji} {dollars(Math.round(results[keyOf(i)].you))}
+            <div key={i} className="crash-card-wrap">
+              <button type="button" className="crash-card" onClick={() => pick(i)}>
+                <span className="crash-emoji" aria-hidden="true">
+                  {s.emoji}
                 </span>
-              ) : (
-                <span className="crash-play">▶ Play</span>
-              )}
-            </button>
+                <span className="crash-year">{new Date(days[c.peak].time * 1000).getUTCFullYear()}</span>
+                <strong>{s.name}</strong>
+                <span className="crash-drop">−{Math.round(c.drop * 100)}%</span>
+                <span className="muted small">{span(days[c.peak].time, days[c.bottom].time, c.bottom - c.peak)} down</span>
+                {results[keyOf(i)] ? (
+                  <span className="crash-best">
+                    Best: {results[keyOf(i)].emoji} {dollars(Math.round(results[keyOf(i)].you))}
+                  </span>
+                ) : (
+                  <span className="crash-play">▶ Play</span>
+                )}
+              </button>
+              <button type="button" className="crash-info" aria-label={`About ${s.name}`} title={`About ${s.name}`} onClick={() => setInfo(i)}>
+                i
+              </button>
+            </div>
           );
         })}
       </section>
@@ -409,6 +449,18 @@ export function HistoryRoom() {
       </section>
 
       <WhatIf days={days} stake={stake} real={real} />
+
+      {info !== null && stories.has(info) && (
+        <CrashInfo
+          story={stories.get(info)!}
+          facts={`From the high on ${mediumDate(days[crashes[info].peak].time)}: −${Math.round(crashes[info].drop * 100)}% in ${span(days[crashes[info].peak].time, days[crashes[info].bottom].time, crashes[info].bottom - crashes[info].peak)}${real ? ", in today's dollars" : ""}.`}
+          onClose={() => setInfo(null)}
+          onPlay={() => {
+            setInfo(null);
+            void pick(info);
+          }}
+        />
+      )}
 
       {film !== null && crashes[film] && (
         <CrashFilm

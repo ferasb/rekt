@@ -178,6 +178,12 @@ describe("today's dollars", () => {
     expect(names).toEqual(expect.arrayContaining(["The Great Crash", "Oil Shock", "Black Monday", "Dot-com Bust → Financial Crisis", "COVID Crash"]));
   });
 
+  it("keep the stories a merged crash is made of, each with its own article", () => {
+    const crashes = findCrashes(real);
+    const merged = [...matchStories(crashes.map((c) => ({ peak: real[c.peak].time, bottom: real[c.bottom].time }))).values()].find((s) => s.parts);
+    expect(merged?.parts?.map((p) => p.wiki)).toEqual(["https://en.wikipedia.org/wiki/Dot-com_bubble", "https://en.wikipedia.org/wiki/2008_financial_crisis"]);
+  });
+
   it("match every story in dollars of the time, one each", () => {
     const crashes = findCrashes(days);
     const stories = matchStories(crashes.map((c) => ({ peak: days[c.peak].time, bottom: days[c.bottom].time })));

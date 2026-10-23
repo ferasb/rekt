@@ -1719,6 +1719,12 @@ input[type="range"].lev-hot {
   gap: 0.75rem;
 }
 
+/* A card, with its info button in the corner (a sibling: a button can't hold a button). */
+.crash-card-wrap {
+  position: relative;
+  display: grid;
+}
+
 .crash-card {
   display: flex;
   flex-direction: column;
@@ -1738,6 +1744,57 @@ input[type="range"].lev-hot {
   transform: translateY(-3px);
   border-color: var(--down);
   box-shadow: 0 10px 24px var(--shadow);
+}
+
+.crash-info {
+  position: absolute;
+  top: 0.55rem;
+  right: 0.55rem;
+  display: grid;
+  place-items: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--bg-raised);
+  color: var(--text-muted);
+  font: italic 700 0.95rem/1 var(--font-news);
+  cursor: pointer;
+  transition: transform 0.15s, color 0.15s, border-color 0.15s;
+}
+
+/* Moves with its card when the card lifts. */
+.crash-card-wrap:has(.crash-card:hover, .crash-card:focus-visible) .crash-info {
+  transform: translateY(-3px);
+}
+
+.crash-info:hover,
+.crash-info:focus-visible {
+  color: var(--primary);
+  border-color: var(--primary);
+}
+
+.crash-info-facts {
+  margin: -0.5rem 0 0.9rem;
+}
+
+.crash-info-part + .crash-info-part {
+  margin-top: 1rem;
+}
+
+.crash-info-part h3 {
+  margin: 0 0 0.3rem;
+  font-size: 1rem;
+}
+
+.crash-info-part p {
+  margin: 0 0 0.4rem;
+  line-height: 1.5;
+}
+
+.crash-info-part a {
+  font-size: 0.9rem;
+  font-weight: 600;
 }
 
 .crash-emoji {
