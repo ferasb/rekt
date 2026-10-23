@@ -4,7 +4,7 @@ import { loadSound, saveSound } from "../../persist/settings";
 // Sounds, synthesized with Web Audio: no files to download. Browsers only allow audio after the
 // visitor has clicked something, which every sound here follows.
 
-export type Sound = "open" | "close" | "win" | "bigwin" | "loss" | "rekt" | "tick" | "warning" | "bailout";
+export type Sound = "open" | "close" | "win" | "bigwin" | "loss" | "rekt" | "tick" | "warning" | "bailout" | "whoosh" | "headline" | "bottom";
 
 interface SoundState {
   on: boolean;
@@ -100,6 +100,33 @@ export function play(sound: Sound): void {
     case "rekt":
       boom(a, t);
       tone(a, t, 220, 40, 1.2, "sawtooth", 0.12);
+      break;
+    case "whoosh": {
+      // The dive into a crash: a falling sweep under a breath of noise.
+      tone(a, t, 900, 120, 0.7, "sine", 0.08);
+      const length = Math.floor(a.sampleRate * 0.7);
+      const buffer = a.createBuffer(1, length, a.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < length; i++) data[i] = (Math.random() * 2 - 1) * Math.sin((Math.PI * i) / length) * 0.5;
+      const source = a.createBufferSource();
+      source.buffer = buffer;
+      const filter = a.createBiquadFilter();
+      filter.type = "bandpass";
+      filter.frequency.setValueAtTime(2400, t);
+      filter.frequency.exponentialRampToValueAtTime(300, t + 0.7);
+      const gain = a.createGain();
+      gain.gain.value = 0.18;
+      source.connect(filter).connect(gain).connect(a.destination);
+      source.start(t);
+      break;
+    }
+    case "headline":
+      tone(a, t, 1046, 1046, 0.12, "sine", 0.07);
+      tone(a, t + 0.09, 1568, 1568, 0.2, "sine", 0.06);
+      break;
+    case "bottom":
+      // A low heartbeat: lub-dub, twice.
+      [0, 0.18, 0.9, 1.08].forEach((d, i) => tone(a, t + d, i % 2 ? 55 : 70, 40, 0.16, "sine", 0.35));
       break;
     case "bailout":
       [784, 659, 523, 784, 1047].forEach((f, i) => tone(a, t + i * 0.1, f, f, 0.2, "square", 0.05));

@@ -47,6 +47,9 @@ export function TopBar({ room, onStats, onReset }: { room: Room; onStats(): void
         <a href="#updown" aria-current={room === "updown" ? "page" : undefined}>
           Up or Down
         </a>
+        <a href="#history" aria-current={room === "history" ? "page" : undefined}>
+          History
+        </a>
       </nav>
       <div className="wallet" aria-live="off">
         <div className={`equity ${flash}`} title="Equity: your cash plus everything open">

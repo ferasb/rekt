@@ -1,12 +1,19 @@
 import { useEffect, useState } from "react";
 import { DEFAULT_ASSET, isAssetId } from "../market/assets";
 
-// Which room is open, from the URL hash: #trade, #updown.
+// Which room is open, from the URL hash: #trade, #updown, #history (which takes ?amount=250000).
 
-export type Room = "trade" | "updown";
+export type Room = "trade" | "updown" | "history";
 
 function parse(hash: string): Room {
-  return hash.replace(/^#/, "").split("/")[0] === "updown" ? "updown" : "trade";
+  const room = hash.replace(/^#/, "").split(/[/?]/)[0];
+  return room === "updown" || room === "history" ? room : "trade";
+}
+
+/** A parameter after the room in the hash: #history?amount=250000. */
+export function hashParam(name: string): string | null {
+  const query = location.hash.split("?")[1];
+  return query ? new URLSearchParams(query).get(name) : null;
 }
 
 export function useRoom(): Room {
