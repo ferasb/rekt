@@ -1456,6 +1456,12 @@ input[type="range"].lev-hot {
 }
 
 /* An on/off switch: a real checkbox, drawn as a track with a knob. */
+.switches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 1.5rem;
+}
+
 .switch {
   display: inline-flex;
   align-items: center;
@@ -2357,6 +2363,13 @@ input[type="range"].lev-hot {
 .decision:focus,
 .film-end:focus {
   outline: none;
+}
+
+.end-hint {
+  margin: 0.5rem 0 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--primary);
 }
 
 .end-buttons .go {

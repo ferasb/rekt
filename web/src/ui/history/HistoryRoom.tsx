@@ -17,6 +17,7 @@ import { dayString, mediumDate, span } from "./time";
 const STAKE_KEY = "rekt:stake";
 const TOUR_KEY = "rekt:history-tour";
 const REAL_KEY = "rekt:history-real";
+const DECIDE_KEY = "rekt:history-decide";
 const PRESETS = [1_000, 10_000, 100_000, 1_000_000];
 /** The cash you also hold, for buying the dip: a quarter of the stake. */
 const RESERVE = 0.25;
@@ -233,6 +234,14 @@ export function HistoryRoom() {
       return false;
     }
   });
+  /** The film stops twice for you to sell, hold or buy more; off, it plays straight through. */
+  const [decide, setDecide] = useState(() => {
+    try {
+      return localStorage.getItem(DECIDE_KEY) === "on";
+    } catch {
+      return false;
+    }
+  });
   const [failed, setFailed] = useState(false);
   const [stake, setStake] = useState(initialStake);
   const [film, setFilm] = useState<number | null>(null);
@@ -250,6 +259,7 @@ export function HistoryRoom() {
   const chartArea = useRef<HTMLDivElement>(null);
   const cardsRow = useRef<HTMLDivElement>(null);
   const stakeRef = useRef<HTMLDivElement>(null);
+  const decideRef = useRef<HTMLLabelElement>(null);
 
   // A century of data, about 40 kB: only fetched when the room is opened.
   useEffect(() => {
@@ -268,6 +278,16 @@ export function HistoryRoom() {
     setReal(next);
     try {
       localStorage.setItem(REAL_KEY, next ? "on" : "off");
+    } catch {
+      // Storage blocked: it lasts until the tab closes.
+    }
+  };
+
+  const toggleDecide = () => {
+    const next = !decide;
+    setDecide(next);
+    try {
+      localStorage.setItem(DECIDE_KEY, next ? "on" : "off");
     } catch {
       // Storage blocked: it lasts until the tab closes.
     }
@@ -344,11 +364,18 @@ export function HistoryRoom() {
             reinvested.
           </p>
         )}
-        <label className="switch">
-          <input type="checkbox" checked={real} onChange={toggleReal} />
-          <span className="switch-track" aria-hidden="true" />
-          Adjust for inflation <span className="muted">(today's dollars)</span>
-        </label>
+        <div className="switches">
+          <label className="switch">
+            <input type="checkbox" checked={real} onChange={toggleReal} />
+            <span className="switch-track" aria-hidden="true" />
+            Adjust for inflation <span className="muted">(today's dollars)</span>
+          </label>
+          <label className="switch" ref={decideRef}>
+            <input type="checkbox" checked={decide} onChange={toggleDecide} />
+            <span className="switch-track" aria-hidden="true" />
+            Stop to decide <span className="muted">(sell, hold or buy)</span>
+          </label>
+        </div>
       </div>
       <StakeChip stake={stake} onChange={changeStake} chipRef={stakeRef} />
     </section>
@@ -472,6 +499,7 @@ export function HistoryRoom() {
           amount={stake}
           reserve={stake * RESERVE}
           real={real}
+          decide={decide}
           onResult={(r) => record(film, r)}
           onClose={closeFilm}
         />
@@ -483,7 +511,12 @@ export function HistoryRoom() {
           steps={[
             { target: chartArea, title: "100 years of the stock market", text: "Every day since 1926, on one chart. Drag to move through time, scroll or pinch to zoom." },
             { target: cardsRow, title: "Red means a crash", text: "Each red stretch is a fall of 20% or more. Tap one, here or on the chart, to live through it as a film." },
-            { target: stakeRef, title: "Choose your stake", text: "You start each crash with this much in the market, plus a quarter of it in cash. Then you decide: sell, hold or buy more?" },
+            { target: stakeRef, title: "Choose your stake", text: "You start each crash with this much in the market, plus a quarter of it in cash." },
+            {
+              target: decideRef,
+              title: "Watch, or play",
+              text: "Films play straight through. Turn on “Stop to decide” and each one pauses twice to ask: sell, hold or buy more? Then see how you did against just holding.",
+            },
           ]}
         />
       )}

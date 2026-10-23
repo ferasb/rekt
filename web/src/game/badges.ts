@@ -32,9 +32,9 @@ export function badges(results: Readonly<Record<string, { feats: readonly Feat[]
   const beat = all.filter((r) => r.feats.includes("beat")).length;
   return [
     { id: "first", emoji: "🎬", name: "First film", how: "Live through any crash.", earned: all.length > 0 },
-    { id: "diamond", emoji: "💎", name: "Diamond hands", how: "Hold through a whole crash, never selling.", earned: has("diamond") },
-    { id: "dip", emoji: "🦅", name: "Bought the dip", how: "Buy more during a crash, and end ahead of holding.", earned: has("dip") },
-    { id: "beat", emoji: "🏆", name: "Beat the market", how: "End ahead of holding in three different crashes.", earned: beat >= 3 },
+    { id: "diamond", emoji: "💎", name: "Diamond hands", how: "With “Stop to decide” on, hold at every decision.", earned: has("diamond") },
+    { id: "dip", emoji: "🦅", name: "Bought the dip", how: "With “Stop to decide” on, buy more, and end ahead of holding.", earned: has("dip") },
+    { id: "beat", emoji: "🏆", name: "Beat the market", how: "With “Stop to decide” on, end ahead of holding in three crashes.", earned: beat >= 3 },
     { id: "all", emoji: "📜", name: "Historian", how: "Live through every famous crash.", earned: famous.length > 0 && famous.every((k) => k in results) },
     { id: "great", emoji: "🎩", name: "Survived 1929", how: "Live through the Great Crash.", earned: Object.keys(results).some((k) => k.startsWith("1929-")) },
   ];

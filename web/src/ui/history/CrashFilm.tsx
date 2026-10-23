@@ -44,7 +44,7 @@ interface Moment {
 
 /**
  * A crash, filmed (docs/time-machine.md §3): a title card, then the candles play at the crash's own
- * pace, with your money, the headlines, and two moments where you decide.
+ * pace, with your money, the headlines, and (when you ask for them) two moments where you decide.
  */
 export function CrashFilm({
   days,
@@ -53,6 +53,7 @@ export function CrashFilm({
   amount,
   reserve,
   real,
+  decide: deciding,
   onResult,
   onClose,
 }: {
@@ -63,6 +64,8 @@ export function CrashFilm({
   reserve: number;
   /** In today's dollars: the money is labelled so. */
   real: boolean;
+  /** Stop at the two decisions; off, the film plays straight through, holding. */
+  decide: boolean;
   /** Once, when the film reaches its end. */
   onResult(result: FilmResult): void;
   onClose(): void;
@@ -75,14 +78,16 @@ export function CrashFilm({
   const peakValue = days[crash.peak].value;
   const name = story?.name ?? `The ${new Date(days[crash.peak].time * 1000).getUTCFullYear()} bear market`;
 
-  // The two decisions (game/history.ts).
+  // The two decisions, when stopping for them (game/history.ts).
   const moments = useMemo<Moment[]>(
     () =>
-      decisionPoints(days, crash, candles).map((p) => ({
-        at: p.at,
-        prompt: p.when === "falling" ? "The news is grim and getting worse." : "It's climbing back. Is it real this time?",
-      })),
-    [candles, crash, days],
+      deciding
+        ? decisionPoints(days, crash, candles).map((p) => ({
+            at: p.at,
+            prompt: p.when === "falling" ? "The news is grim and getting worse." : "It's climbing back. Is it real this time?",
+          }))
+        : [],
+    [candles, crash, days, deciding],
   );
 
   // Headlines, on the candle that holds their date.
@@ -261,6 +266,8 @@ export function CrashFilm({
   useEffect(() => {
     if (!result || !grade) return;
     onResult({ you: result.you, held: result.held, start: amount + reserve, title: grade.title, emoji: grade.emoji, choices, at: Date.now(), feats: featsOf({ ...result, choices }) });
+    // Just watching: nothing to celebrate or mourn.
+    if (choices.length === 0) return;
     if (result.you >= result.held) {
       fx({ type: "confetti", amount: result.you > result.held * 1.05 ? "lots" : "some" });
       play("bigwin");
@@ -411,6 +418,7 @@ export function CrashFilm({
               : "The market hasn't got back to its high yet."}
             {plan.skipsRecovery && " (The film stops a while after the bottom.)"}
           </p>
+          {!deciding && <p className="end-hint">Turn on “Stop to decide” to play it your way: sell, hold or buy more.</p>}
           <ul className="paths">
             {paths.map((p) => (
               <li key={p.label} className={p.you ? "you" : ""}>

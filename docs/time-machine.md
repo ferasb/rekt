@@ -29,7 +29,7 @@ A new room, **History** (`#history`): 150 years of the stock market on one chart
    - **The fall from the peak**, as a meter that fills.
    - **The date**, ticking, and **months underwater**.
    - **Headlines** at their real dates: "Oct 29, 1929: Black Tuesday", "Sep 15, 2008: Lehman Brothers files for bankruptcy". Only well-documented events, each checked, about four per crash.
-3. **The decisions: this is the game.** The film pauses two or three times, at real moments (after the first big drop, near the bottom, in the recovery). **"Your $1M is now $612k. What do you do?"** You choose **Sell everything**, **Hold** or **Buy more** (with a cash reserve you start with). Each choice trades at that month's real price.
+3. **The decisions: this is the game.** The film pauses two or three times, at real moments (after the first big drop, near the bottom, in the recovery). **"Your $1M is now $612k. What do you do?"** You choose **Sell everything**, **Hold** or **Buy more** (with a cash reserve you start with). Each choice trades at that month's real price. The decisions are opt-in: a "Stop to decide" switch by the inflation one (off by default, `rekt:history-decide`), so a film plays straight through unless you ask for them, and the tour points at it.
 4. **The ending.** The film runs to the recovery (the old peak regained) or to today. The result card shows:
    - **your path against the three simple ones:** held all along, sold at the bottom, and bought at the bottom
    - **what it meant:** "You'd have had your money back in March 2013, 5 years and 5 months later"
@@ -59,7 +59,7 @@ This room barely touches the live game. It has its own pure model and its own ch
   - the three simple paths and the grade
 - `game/crashes.ts`: names, one-line stories and headlines (dates checked) for the famous crashes.
 - `ui/history/`: the long view (Lightweight Charts with a custom "band" primitive for the red zones), the film (the same chart, its visible range animated, plus an HTML readout over it), the coach marks, and the cards.
-- Saved: crash results and badges, `rekt:history`, validated on load.
+- Saved: crash results and badges, `rekt:history`, validated on load; the stake, the inflation and "Stop to decide" switches, and the tour (`rekt:stake`, `rekt:history-real`, `rekt:history-decide`, `rekt:history-tour`).
 
 ## 6. Build order
 
@@ -73,6 +73,6 @@ Effort: about 5–6 sessions in all, the prototype included.
 
 ## 7. Status (on the branch)
 
-Built: the long view (bands, labels in non-overlapping rows, cards, the inflation switch, the stake chip and `?amount=`, the tour), the film (dive, title card, candles paced with slow motion on big days, the readout, headlines, two decisions, the result against three paths), best results per crash, badges, and the "what if" calculator, and an info popup per famous crash with its Wikipedia link. 93 tests.
+Built: the long view (bands, labels in non-overlapping rows, cards, the inflation switch, the stake chip and `?amount=`, the tour), the film (dive, title card, candles paced with slow motion on big days, the readout, headlines, two decisions, the result against three paths), the "Stop to decide" switch (off by default), best results per crash, badges, and the "what if" calculator, and an info popup per famous crash with its Wikipedia link. 93 tests.
 
 Still to do: Lighthouse and a performance pass on the 26,000-point chart on phones, a share image, and more crashes' stories (1946, 1962, 1990, 1998, 2018 and 2025 have bands but no names yet).
