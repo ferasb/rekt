@@ -29,6 +29,7 @@ import { FEATURED, assetById, sourceOf, type Source } from "../market/assets";
 import { granularityFor } from "../market/candles";
 import { CANDLE_LIMITS, connectFeed, fetchCandles, type Feed, type Tick } from "../market/feeds";
 import { loadCovered, loadGame, onGameSavedElsewhere, saveCovered, saveGame } from "../persist/game";
+import { clearHistory } from "../persist/history";
 import { fx, reducedMotion, toast } from "./fx/bus";
 import { play } from "./fx/sound";
 import { latest, receiveTick, setFeedStatus, usePrices } from "./prices";
@@ -96,10 +97,12 @@ export function takeBailout(): void {
 }
 
 export function resetGame(): void {
+  // History first: another tab re-reads it when the new game arrives there.
+  clearHistory();
   useGame.setState({ game: newGame(Date.now()) });
   saveGame(useGame.getState().game);
   warned.clear();
-  toast("info", "Fresh start", "Everything's wiped. $10,000, a clean record, no bailouts.");
+  toast("info", "Fresh start", "Everything's wiped. $10,000, a clean record, no bailouts, and History from scratch.");
 }
 
 // Reactions

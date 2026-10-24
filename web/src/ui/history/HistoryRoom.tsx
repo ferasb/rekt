@@ -3,7 +3,7 @@ import { badges } from "../../game/badges";
 import { matchStories, type CrashStory } from "../../game/crashes";
 import { dollars } from "../../game/format";
 import { decodeHistory, findCrashes, inTodaysDollars, indexAt, type Day, type HistoryFile } from "../../game/history";
-import { keepBest, loadResults, saveResults, type FilmResult, type Results } from "../../persist/history";
+import { DECIDE_KEY, keepBest, loadResults, REAL_KEY, saveResults, STAKE_KEY, TOUR_KEY, type FilmResult, type Results } from "../../persist/history";
 import { Dialog } from "../Dialogs";
 import { reducedMotion } from "../fx/bus";
 import { useModal } from "../modal";
@@ -14,10 +14,6 @@ import { LongView, type LongViewHandle } from "./LongView";
 import { dayString, mediumDate, span } from "./time";
 
 // The stake: from the address (#history?amount=250000), else the visitor's last pick, else $1,000,000.
-const STAKE_KEY = "rekt:stake";
-const TOUR_KEY = "rekt:history-tour";
-const REAL_KEY = "rekt:history-real";
-const DECIDE_KEY = "rekt:history-decide";
 const PRESETS = [1_000, 10_000, 100_000, 1_000_000];
 /** The cash you also hold, for buying the dip: a quarter of the stake. */
 const RESERVE = 0.25;

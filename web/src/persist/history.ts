@@ -1,6 +1,6 @@
 import { FEATS, featsOf, type Feat } from "../game/badges";
 
-// The History room's results: the best one per crash, in localStorage, validated on load.
+// The History room's results (the best one per crash, validated on load) and its settings, in localStorage.
 
 export interface FilmResult {
   /** What you ended with, what holding would have, and the stake both started from (with the cash). */
@@ -21,6 +21,11 @@ export interface FilmResult {
 export type Results = Record<string, FilmResult>;
 
 const KEY = "rekt:history";
+/** The stake, the inflation and "Stop to decide" switches, and the tour having been seen. */
+export const STAKE_KEY = "rekt:stake";
+export const REAL_KEY = "rekt:history-real";
+export const DECIDE_KEY = "rekt:history-decide";
+export const TOUR_KEY = "rekt:history-tour";
 
 const num = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v);
 const str = (v: unknown): v is string => typeof v === "string" && v.length > 0 && v.length < 80;
@@ -54,6 +59,34 @@ export function saveResults(results: Results): void {
   } catch {
     // Storage full or blocked: results last until the tab closes.
   }
+}
+
+const ALL_KEYS = [KEY, STAKE_KEY, REAL_KEY, DECIDE_KEY, TOUR_KEY];
+const CLEARED = "rekt:history-cleared";
+
+/** Everything History saved: for "Reset everything". */
+export function clearHistory(): void {
+  for (const key of ALL_KEYS) {
+    try {
+      localStorage.removeItem(key);
+    } catch {
+      // Storage blocked: nothing was saved.
+    }
+  }
+  window.dispatchEvent(new Event(CLEARED));
+}
+
+/** Calls back when History's saved data is wiped, in this tab or another (the storage event). */
+export function onHistoryCleared(callback: () => void): () => void {
+  const elsewhere = (e: StorageEvent) => {
+    if (e.key === null || (ALL_KEYS.includes(e.key) && e.newValue === null)) callback();
+  };
+  window.addEventListener(CLEARED, callback);
+  window.addEventListener("storage", elsewhere);
+  return () => {
+    window.removeEventListener(CLEARED, callback);
+    window.removeEventListener("storage", elsewhere);
+  };
 }
 
 /**

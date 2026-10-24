@@ -12,6 +12,7 @@ import { loadAsset, saveAsset, useRoom } from "./rooms";
 import { TopBar } from "./TopBar";
 import { UpDown } from "./UpDown";
 import { HistoryRoom } from "./history/HistoryRoom";
+import { onHistoryCleared } from "../persist/history";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { usePrices } from "./prices";
 import { Pnl } from "./widgets";
@@ -60,6 +61,9 @@ export function App() {
   const [asset, setAsset] = useState(loadAsset);
   const [granularity, setGranularity] = useState(60);
   const [dialog, setDialog] = useState<"stats" | "reset" | null>(null);
+  /** Bumped when History's data is wiped (Reset everything, here or in another tab): it starts again from nothing. */
+  const [historyRun, setHistoryRun] = useState(0);
+  useEffect(() => onHistoryCleared(() => setHistoryRun((n) => n + 1)), []);
   const pick = (id: string) => {
     setAsset(id);
     saveAsset(id);
@@ -87,7 +91,7 @@ export function App() {
         <UpDown asset={asset} onPick={pick} />
       ) : (
         <ErrorBoundary label="History">
-          <HistoryRoom />
+          <HistoryRoom key={historyRun} />
         </ErrorBoundary>
       )}
       <footer className="footer">

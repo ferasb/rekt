@@ -71,7 +71,10 @@ export function StatsDialog({ onClose }: { onClose(): void }) {
 export function ResetDialog({ onClose }: { onClose(): void }) {
   return (
     <Dialog title="🧨 Reset everything?" onClose={onClose}>
-      <p>This wipes your money, positions, history, stats and bailout count, and starts over with $10,000. It can't be undone.</p>
+      <p>
+        This wipes your money, positions, trade history, stats and bailout count, and starts over with $10,000. In History, it wipes your results, badges and
+        settings too. It can't be undone.
+      </p>
       <div className="dialog-actions">
         <button type="button" className="chip" onClick={onClose}>
           Keep playing

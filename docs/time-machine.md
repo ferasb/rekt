@@ -59,7 +59,7 @@ This room barely touches the live game. It has its own pure model and its own ch
   - the three simple paths and the grade
 - `game/crashes.ts`: names, one-line stories and headlines (dates checked) for the famous crashes.
 - `ui/history/`: the long view (Lightweight Charts with a custom "band" primitive for the red zones), the film (the same chart, its visible range animated, plus an HTML readout over it), the coach marks, and the cards.
-- Saved: crash results and badges, `rekt:history`, validated on load; the stake, the inflation and "Stop to decide" switches, and the tour (`rekt:stake`, `rekt:history-real`, `rekt:history-decide`, `rekt:history-tour`).
+- Saved: crash results and badges, `rekt:history`, validated on load; the stake, the inflation and "Stop to decide" switches, and the tour (`rekt:stake`, `rekt:history-real`, `rekt:history-decide`, `rekt:history-tour`). "Reset everything" in the menu wipes all of them (`clearHistory`), and the room starts again from nothing.
 
 ## 6. Build order
 
