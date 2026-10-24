@@ -2,7 +2,8 @@
  * The palette of ferasbisharat.com and the sites under it.
  *
  * The same file lives in each repository: ferasb.github.io/theme.css is the original, and
- * bloch-sphere/web/src/theme.css is a copy. Change the original, then copy it over.
+ * bloch-sphere/web/src/theme.css and rekt/web/src/theme.css are copies. Change the original, then
+ * copy it over.
  *
  * Every token has a light and a dark value, light-dark(light, dark), chosen by the page's color
  * scheme: the system's by default, or the visitor's choice (data-theme="light" or "dark" on <html>).
