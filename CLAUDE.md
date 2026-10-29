@@ -11,7 +11,7 @@ A trading game with play money and live crypto and stock prices: a static websit
   - History (`docs/time-machine.md`): `game/history.ts` (crashes, candles from closes, pacing, the portfolio, inflation), `game/crashes.ts` (names and dated headlines: facts only), `game/badges.ts`, `persist/history.ts`, `market/history/us-market.json` (built by `scripts/build-history.mjs`; don't edit by hand), and `ui/history/`.
   - `src/ui/`: React. `engine.ts` is the one place the game changes: it runs the feeds (and what they watch), applies actions, saves, and turns events into reactions. `prices.ts` (live prices, throttled for React), `fx/` (toasts, confetti, the REKT overlay, sounds), `charts/`, the panels.
   - `src/theme.css`: the palette shared with ferasbisharat.com (a copy; the original is `ferasb.github.io/theme.css`). `src/tokens.css`: this site's tokens.
-  - `public/`: copied as is (the About, Privacy and 404 pages, `page.css` for them, favicon, `theme-init.js`).
+  - `public/`: copied as is (the About, Privacy and 404 pages, `page.css` for them, favicon, `theme-init.js`, `robots.txt` and `sitemap.xml`, which lists the three pages: add a new public page there).
 - `docs/`: the design, and how to deploy.
 - `.github/workflows/`: CI (tests and build on every push) and the GitHub Pages deploy.
 
